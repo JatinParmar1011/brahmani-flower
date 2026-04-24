@@ -9,7 +9,7 @@ import ClientReviews from '../components/ClientReviews';
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col gap-10">
+    <>
       <HeroSlider />
       <HeroTagline />
       <BestSelling />
@@ -18,6 +18,6 @@ export default function HomePage() {
       <ShopByRecipient />
       <InTheSpotlight />
       <ClientReviews />
-    </div>
+    </>
   );
 }
