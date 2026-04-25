@@ -5,12 +5,14 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import UserDashboard from './pages/UserDashboard';
+import MorePage from './pages/MorePage';
 import './App.css';
 
 function App() {
   const [page, setPage]         = useState('home');
   const [user, setUser]         = useState(null);
   const [dashTab, setDashTab]   = useState('profile');
+  const [morePage, setMorePage] = useState(null);
 
   const handleAuthDone = (userData) => {
     if (userData) setUser(userData);
@@ -27,6 +29,11 @@ function App() {
     setPage('home');
   };
 
+  const handleMoreClick = (key) => {
+    setMorePage(key);
+    setPage('more');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar
@@ -34,6 +41,7 @@ function App() {
         user={user}
         onSignOut={handleSignOut}
         onMenuClick={handleMenuClick}
+        onMoreClick={handleMoreClick}
       />
       <NavLinks />
 
@@ -55,6 +63,10 @@ function App() {
           initialTab={dashTab}
           onSignOut={handleSignOut}
         />
+      )}
+
+      {page === 'more' && (
+        <MorePage pageKey={morePage} onBack={() => setPage('home')} />
       )}
 
       <Footer />

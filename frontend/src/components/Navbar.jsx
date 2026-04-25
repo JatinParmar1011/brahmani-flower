@@ -7,7 +7,7 @@ function getInitials(name = '') {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// Menu items config
+// User menu items
 const MENU_ITEMS = [
   { icon: '👤', label: 'Profile',       key: 'profile' },
   { icon: '📋', label: 'Order History', key: 'orders' },
@@ -15,35 +15,60 @@ const MENU_ITEMS = [
   { icon: '🚚', label: 'Track Order',   key: 'track' },
 ];
 
-export default function Navbar({ onSignIn, user, onSignOut, onMenuClick }) {
-  const [search, setSearch]   = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+// More menu sections
+const MORE_SECTIONS = [
+  {
+    title: 'Help & Support',
+    items: [
+      { icon: '❓', label: 'FAQ',        sub: 'Frequently asked questions', key: 'faq' },
+      { icon: '📞', label: 'Contact Us', sub: "We're here to help",         key: 'contact' },
+    ],
+  },
+  {
+    title: 'Company',
+    items: [
+      { icon: '🌸', label: 'About Us', sub: 'Our story & mission',          key: 'about' },
+      { icon: '🖼️', label: 'Gallery',  sub: 'Our floral creations',         key: 'gallery' },
+    ],
+  },
+  {
+    title: 'Policies',
+    items: [
+      { icon: '🔒', label: 'Privacy Policy',  sub: 'How we protect your data', key: 'privacy' },
+      { icon: '📄', label: 'Terms of Service', sub: 'Our terms & conditions',   key: 'terms' },
+    ],
+  },
+];
 
-  // Close dropdown on outside click
+// Reusable hook: close on outside click
+function useOutsideClick(ref, cb) {
   useEffect(() => {
-    const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
-    };
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) cb(); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+}
 
-  const initials = user ? getInitials(user.name) : '';
+export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreClick }) {
+  const [search, setSearch]     = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const menuRef = useRef(null);
+  const moreRef = useRef(null);
+
+  useOutsideClick(menuRef, () => setMenuOpen(false));
+  useOutsideClick(moreRef, () => setMoreOpen(false));
+
+  const initials    = user ? getInitials(user.name) : '';
   const displayName = user?.name || 'User';
   const displayEmail = user?.email || (user?.mobile ? `+91 ${user.mobile}` : '');
 
+  const anyOpen = menuOpen || moreOpen;
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      {/* Dark overlay when menu is open */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
+      {anyOpen && <div className="fixed inset-0 bg-black/40 z-40" onClick={() => { setMenuOpen(false); setMoreOpen(false); }} />}
+
       <div className="max-w-[1300px] mx-auto flex items-center gap-4 px-6 py-3">
 
         {/* Logo */}
@@ -76,6 +101,7 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick }) {
 
         {/* Actions */}
         <div className="flex items-center gap-5 flex-shrink-0">
+
           {/* Track Order */}
           <div className="flex flex-col items-center text-xs text-gray-600 cursor-pointer gap-0.5 hover:text-[#1a6b8a] transition-colors">
             <span className="text-xl">🗺️</span>
@@ -97,20 +123,14 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick }) {
 
           {/* Sign In / User Avatar */}
           {!user ? (
-            <div
-              onClick={onSignIn}
-              className="flex flex-col items-center text-xs text-gray-600 cursor-pointer gap-0.5 hover:text-[#1a6b8a] transition-colors"
-            >
+            <div onClick={onSignIn} className="flex flex-col items-center text-xs text-gray-600 cursor-pointer gap-0.5 hover:text-[#1a6b8a] transition-colors">
               <span className="text-xl">👤</span>
               <span>Sign In</span>
             </div>
           ) : (
             <div className="relative z-[60]" ref={menuRef}>
-              {/* Avatar button */}
-              <button
-                onClick={() => setMenuOpen(o => !o)}
-                className="flex flex-col items-center gap-0.5 cursor-pointer group"
-              >
+              <button onClick={() => { setMenuOpen(o => !o); setMoreOpen(false); }}
+                className="flex flex-col items-center gap-0.5 cursor-pointer group">
                 <div className="w-9 h-9 rounded-full bg-[#1a6b8a] flex items-center justify-center text-white text-sm font-bold shadow-md group-hover:bg-[#155a75] transition-colors ring-2 ring-[#1a6b8a]/20">
                   {initials}
                 </div>
@@ -119,53 +139,31 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick }) {
                 </span>
               </button>
 
-              {/* Dropdown */}
               {menuOpen && (
                 <div className="absolute right-0 top-[calc(100%+10px)] w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60]">
-
-                  {/* Arrow */}
                   <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-gray-100 rotate-45" />
-
-                  {/* User info header */}
                   <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-[#1a6b8a]/5 to-[#1a6b8a]/10 border-b border-gray-100">
-                    <div className="w-12 h-12 rounded-full bg-[#1a6b8a] flex items-center justify-center text-white text-lg font-bold flex-shrink-0 shadow">
-                      {initials}
-                    </div>
+                    <div className="w-12 h-12 rounded-full bg-[#1a6b8a] flex items-center justify-center text-white text-lg font-bold flex-shrink-0 shadow">{initials}</div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">{displayEmail}</p>
                     </div>
                   </div>
-
-                  {/* Menu items */}
                   <div className="py-2">
-                    {MENU_ITEMS.map((item) => (
-                      <button
-                        key={item.key}
-                        onClick={() => { setMenuOpen(false); onMenuClick?.(item.key); }}
-                        className="w-full flex items-center gap-3.5 px-5 py-3 text-sm text-gray-700 hover:bg-[#1a6b8a]/5 hover:text-[#1a6b8a] transition-colors group"
-                      >
-                        <span className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#1a6b8a]/10 flex items-center justify-center text-base transition-colors flex-shrink-0">
-                          {item.icon}
-                        </span>
+                    {MENU_ITEMS.map(item => (
+                      <button key={item.key} onClick={() => { setMenuOpen(false); onMenuClick?.(item.key); }}
+                        className="w-full flex items-center gap-3.5 px-5 py-3 text-sm text-gray-700 hover:bg-[#1a6b8a]/5 hover:text-[#1a6b8a] transition-colors group">
+                        <span className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#1a6b8a]/10 flex items-center justify-center text-base transition-colors flex-shrink-0">{item.icon}</span>
                         <span className="font-medium">{item.label}</span>
                         <span className="ml-auto text-gray-300 group-hover:text-[#1a6b8a] text-xs">›</span>
                       </button>
                     ))}
                   </div>
-
-                  {/* Divider */}
                   <div className="mx-5 border-t border-gray-100" />
-
-                  {/* Sign Out */}
                   <div className="py-2">
-                    <button
-                      onClick={() => { setMenuOpen(false); onSignOut(); }}
-                      className="w-full flex items-center gap-3.5 px-5 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors group"
-                    >
-                      <span className="w-8 h-8 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center text-base transition-colors flex-shrink-0">
-                        🔴
-                      </span>
+                    <button onClick={() => { setMenuOpen(false); onSignOut(); }}
+                      className="w-full flex items-center gap-3.5 px-5 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors group">
+                      <span className="w-8 h-8 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center text-base transition-colors flex-shrink-0">🔴</span>
                       <span className="font-semibold">Sign Out</span>
                     </button>
                   </div>
@@ -174,11 +172,72 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick }) {
             </div>
           )}
 
-          {/* More */}
-          <div className="flex flex-col items-center text-xs text-gray-600 cursor-pointer gap-0.5 hover:text-[#1a6b8a] transition-colors">
-            <span className="text-xl">☰</span>
-            <span>More</span>
+          {/* ── More ── */}
+          <div className="relative z-[60]" ref={moreRef}>
+            <button
+              onClick={() => { setMoreOpen(o => !o); setMenuOpen(false); }}
+              className={`flex flex-col items-center gap-0.5 cursor-pointer group transition-colors ${
+                moreOpen ? 'text-[#1a6b8a]' : 'text-gray-600 hover:text-[#1a6b8a]'
+              }`}
+            >
+              <span className="text-xl">☰</span>
+              <span className="text-xs">More</span>
+            </button>
+
+            {moreOpen && (
+              <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60]">
+                {/* Arrow */}
+                <div className="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-gray-100 rotate-45" />
+
+                {/* Header */}
+                <div className="px-5 py-4 bg-gradient-to-r from-[#1a6b8a]/5 to-[#1a6b8a]/10 border-b border-gray-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#1a6b8a] flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-base">🌸</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Bramhani Flower</p>
+                      <p className="text-[11px] text-gray-500">Delivering happiness since 2020</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sections */}
+                <div className="py-2 max-h-[420px] overflow-y-auto">
+                  {MORE_SECTIONS.map((section, si) => (
+                    <div key={section.title}>
+                      {si !== 0 && <div className="mx-5 border-t border-gray-100 my-1" />}
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-5 pt-2 pb-1">
+                        {section.title}
+                      </p>
+                      {section.items.map(item => (
+                        <button
+                          key={item.key}
+                          onClick={() => { setMoreOpen(false); onMoreClick?.(item.key); }}
+                          className="w-full flex items-center gap-3.5 px-5 py-2.5 hover:bg-[#1a6b8a]/5 hover:text-[#1a6b8a] transition-colors group"
+                        >
+                          <span className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-[#1a6b8a]/10 flex items-center justify-center text-base transition-colors flex-shrink-0">
+                            {item.icon}
+                          </span>
+                          <div className="text-left min-w-0">
+                            <p className="text-sm font-medium text-gray-800 group-hover:text-[#1a6b8a] transition-colors">{item.label}</p>
+                            <p className="text-[11px] text-gray-400 truncate">{item.sub}</p>
+                          </div>
+                          <span className="ml-auto text-gray-300 group-hover:text-[#1a6b8a] text-xs flex-shrink-0">›</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="border-t border-gray-100 px-5 py-3 bg-gray-50">
+                  <p className="text-[11px] text-gray-400">© 2025 Bramhani Flower</p>
+                </div>
+              </div>
+            )}
           </div>
+
         </div>
       </div>
     </header>
