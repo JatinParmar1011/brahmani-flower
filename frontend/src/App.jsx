@@ -42,6 +42,7 @@ function App() {
         onSignOut={handleSignOut}
         onMenuClick={handleMenuClick}
         onMoreClick={handleMoreClick}
+        onHome={() => setPage('home')}
       />
       <NavLinks />
 

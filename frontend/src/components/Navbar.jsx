@@ -49,7 +49,7 @@ function useOutsideClick(ref, cb) {
   }, []);
 }
 
-export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreClick }) {
+export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreClick, onHome }) {
   const [search, setSearch]     = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -69,10 +69,10 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       {anyOpen && <div className="fixed inset-0 bg-black/40 z-40" onClick={() => { setMenuOpen(false); setMoreOpen(false); }} />}
 
-      <div className="max-w-[1300px] mx-auto flex items-center gap-4 px-6 py-3">
+      <div className="max-w-[1300px] mx-auto flex items-center px-6 py-3">
 
-        {/* Logo */}
-        <div className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
+        {/* Logo — left */}
+        <div onClick={onHome} className="flex items-center gap-2 flex-shrink-0 cursor-pointer">
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
             <path d="M18 4C14 4 10 8 10 12c0 3 2 5.5 5 7-3 1.5-5 4-5 7h16c0-3-2-5.5-5-7 3-1.5 5-4 5-7 0-4-4-8-8-8z" fill="#1a6b8a" opacity="0.8"/>
             <circle cx="18" cy="18" r="3" fill="#1a6b8a"/>
@@ -80,32 +80,27 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
           <span className="text-lg font-bold text-[#1a6b8a] tracking-wide">BRAMHANI FLOWER</span>
         </div>
 
-        {/* Delivery */}
-        <div className="flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 py-2 cursor-pointer flex-shrink-0 text-sm text-gray-700 hover:border-[#1a6b8a] transition-colors">
-          <span className="text-lg">🇮🇳</span>
-          <span>Deliver To ?</span>
-          <span className="text-xs text-gray-400 ml-1">✏️</span>
+        {/* Search — centre */}
+        <div className="flex flex-1 justify-center px-8">
+          <div className="flex items-center bg-gray-100 border border-gray-200 rounded-lg overflow-hidden w-full max-w-md">
+            <input
+              type="text"
+              placeholder="Search for flowers..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="flex-1 bg-transparent px-4 py-2.5 text-sm outline-none text-gray-700"
+            />
+            <button className="px-4 py-2.5 text-base bg-transparent border-none cursor-pointer hover:bg-gray-200 transition-colors">🔍</button>
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="flex flex-1 items-center bg-gray-100 border border-gray-200 rounded-lg overflow-hidden">
-          <input
-            type="text"
-            placeholder="Search for flowers..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="flex-1 bg-transparent px-4 py-2.5 text-sm outline-none text-gray-700"
-          />
-          <button className="px-4 py-2.5 text-base bg-transparent border-none cursor-pointer hover:bg-gray-200 transition-colors">🔍</button>
-        </div>
-
-        {/* Actions */}
+        {/* Actions — right */}
         <div className="flex items-center gap-5 flex-shrink-0">
 
-          {/* Track Order */}
+          {/* Wishlist */}
           <div className="flex flex-col items-center text-xs text-gray-600 cursor-pointer gap-0.5 hover:text-[#1a6b8a] transition-colors">
-            <span className="text-xl">🗺️</span>
-            <span>Track Order</span>
+            <span className="text-xl">❤️</span>
+            <span>Wishlist</span>
           </div>
 
           {/* Cart */}
@@ -113,12 +108,6 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
             <span className="text-xl">🛒</span>
             <span className="absolute -top-1 -right-2.5 bg-red-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
             <span>Cart</span>
-          </div>
-
-          {/* INR */}
-          <div className="flex flex-col items-center text-xs text-gray-600 cursor-pointer gap-0.5 hover:text-[#1a6b8a] transition-colors">
-            <span className="text-xl">₹</span>
-            <span>INR</span>
           </div>
 
           {/* Sign In / User Avatar */}
