@@ -4,14 +4,37 @@ import NavLinks from './components/NavLinks';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
+import UserDashboard from './pages/UserDashboard';
 import './App.css';
 
 function App() {
-  const [page, setPage] = useState('home'); // 'home' | 'auth'
+  const [page, setPage]         = useState('home');
+  const [user, setUser]         = useState(null);
+  const [dashTab, setDashTab]   = useState('profile');
+
+  const handleAuthDone = (userData) => {
+    if (userData) setUser(userData);
+    setPage('home');
+  };
+
+  const handleMenuClick = (tab) => {
+    setDashTab(tab);
+    setPage('dashboard');
+  };
+
+  const handleSignOut = () => {
+    setUser(null);
+    setPage('home');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar onSignIn={() => setPage('auth')} />
+      <Navbar
+        onSignIn={() => setPage('auth')}
+        user={user}
+        onSignOut={handleSignOut}
+        onMenuClick={handleMenuClick}
+      />
       <NavLinks />
 
       {page === 'home' && (
@@ -23,7 +46,15 @@ function App() {
       )}
 
       {page === 'auth' && (
-        <AuthPage onAuthDone={() => setPage('home')} />
+        <AuthPage onAuthDone={handleAuthDone} />
+      )}
+
+      {page === 'dashboard' && (
+        <UserDashboard
+          user={user}
+          initialTab={dashTab}
+          onSignOut={handleSignOut}
+        />
       )}
 
       <Footer />

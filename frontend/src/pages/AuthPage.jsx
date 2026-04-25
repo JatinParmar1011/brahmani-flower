@@ -2,7 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 
 // ── Mock "database" of registered users (persisted in memory) ─────────────
 // Key: mobile number string, Value: profile object
-const REGISTERED_USERS = { '9999999999': { name: 'Test User', email: '' } };
+const REGISTERED_USERS = {
+  '9999999999': { name: 'Test User',  email: 'abc123@gmail.com' },
+};
+// Registered emails mapped to their linked mobile
+const REGISTERED_EMAILS = {
+  'abc123@gmail.com': '9999999999',
+};
 const TEST_OTP = '123456';
 
 // ── Google SVG ─────────────────────────────────────────────────────────────
@@ -297,10 +303,10 @@ function StepProfile({ identifier, onDone }) {
 
   const handleSubmit = () => {
     if (!form.name.trim()) { setError('Please enter your full name.'); return; }
-    // Register user in mock store
     const key = identifier.replace('+91', '').trim();
-    REGISTERED_USERS[key] = { name: form.name, email: identifier.includes('@') ? identifier : '' };
-    onDone();
+    const userData = { name: form.name, title: form.title, email: identifier.includes('@') ? identifier : '', mobile: key, dob: form.dob };
+    REGISTERED_USERS[key] = userData;
+    onDone(userData);
   };
 
   return (
@@ -391,26 +397,51 @@ export default function AuthPage({ onAuthDone }) {
     }
   };
 
-  // Step 0 — email entered → go to signup with mobile
+  // Step 0 — email entered
   const handleEmailNext = (email) => {
-    setId(email);
-    setIsLogin(false);
-    setTotal(4);
-    setStep(1);
+    const linkedMobile = REGISTERED_EMAILS[email.toLowerCase()];
+    if (linkedMobile) {
+      // Existing email user → login flow: show OTP with linked mobile
+      setId(email);
+      setMobile(linkedMobile);
+      setIsLogin(true);
+      setTotal(2);
+      setStep(2);
+    } else {
+      // New email → signup flow: go to enter mobile
+      setId(email);
+      setIsLogin(false);
+      setTotal(4);
+      setStep(1);
+    }
   };
 
   // Step 1 — mobile confirmed in signup form
+  // Check here too: user may have arrived via auto-nav with a partial number
+  // and completed it to an existing registered number
   const handleSignupMobileNext = (phone) => {
     setMobile(phone);
+    setId(phone);
+    if (REGISTERED_USERS[phone]) {
+      // Existing user → switch to login flow
+      setIsLogin(true);
+      setTotal(2);
+    } else {
+      setIsLogin(false);
+    }
     setStep(2);
   };
 
   // Step 2 — OTP verified
   const handleOTPNext = () => {
     if (isLogin) {
-      onAuthDone(); // existing user → go home
+      const stored = REGISTERED_USERS[mobile];
+      const userData = stored
+        ? { title: stored.title || 'Mr.', name: stored.name || 'User', email: stored.email || (identifier.includes('@') ? identifier : ''), mobile, dob: stored.dob || '' }
+        : { title: 'Mr.', name: 'User', email: identifier.includes('@') ? identifier : '', mobile, dob: '' };
+      onAuthDone(userData);
     } else {
-      setStep(3);   // new user → fill profile
+      setStep(3);
     }
   };
 
