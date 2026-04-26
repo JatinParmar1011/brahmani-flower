@@ -49,7 +49,7 @@ function useOutsideClick(ref, cb) {
   }, []);
 }
 
-export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreClick, onHome }) {
+export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreClick, onHome, onCartClick, cartCount = 0 }) {
   const [search, setSearch]     = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -104,9 +104,13 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
           </div>
 
           {/* Cart */}
-          <div className="flex flex-col items-center text-xs text-gray-600 cursor-pointer relative gap-0.5 hover:text-[#1a6b8a] transition-colors">
+          <div onClick={onCartClick} className="flex flex-col items-center text-xs text-gray-600 cursor-pointer relative gap-0.5 hover:text-[#1a6b8a] transition-colors">
             <span className="text-xl">🛒</span>
-            <span className="absolute -top-1 -right-2.5 bg-red-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-2.5 bg-red-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
             <span>Cart</span>
           </div>
 

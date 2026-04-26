@@ -6,13 +6,22 @@ import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import UserDashboard from './pages/UserDashboard';
 import MorePage from './pages/MorePage';
+import CartPage from './pages/CartPage';
 import './App.css';
+
+const INITIAL_CART = [
+  { id: 1, name: 'Red Rose Bouquet',  category: 'Bouquets',  originalPrice: 799, price: 599, qty: 2, emoji: '🌹', tag: 'Bestseller' },
+  { id: 2, name: 'Sunflower Delight', category: 'Seasonal',  originalPrice: 599, price: 449, qty: 1, emoji: '🌻', tag: 'Fresh' },
+  { id: 3, name: 'Lavender Dreams',   category: 'Aromatics', originalPrice: 999, price: 749, qty: 1, emoji: '💜', tag: 'Premium' },
+];
 
 function App() {
   const [page, setPage]         = useState('home');
   const [user, setUser]         = useState(null);
   const [dashTab, setDashTab]   = useState('profile');
   const [morePage, setMorePage] = useState(null);
+  const [cartItems, setCartItems] = useState(INITIAL_CART);
+  const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
 
   const handleAuthDone = (userData) => {
     if (userData) setUser(userData);
@@ -42,6 +51,8 @@ function App() {
         onSignOut={handleSignOut}
         onMenuClick={handleMenuClick}
         onMoreClick={handleMoreClick}
+        onCartClick={() => setPage('cart')}
+        cartCount={cartCount}
         onHome={() => setPage('home')}
       />
       <NavLinks />
@@ -68,6 +79,14 @@ function App() {
 
       {page === 'more' && (
         <MorePage pageKey={morePage} onBack={() => setPage('home')} />
+      )}
+
+      {page === 'cart' && (
+        <CartPage
+          cartItems={cartItems}
+          setCartItems={setCartItems}
+          onBack={() => setPage('home')}
+        />
       )}
 
       <Footer />
