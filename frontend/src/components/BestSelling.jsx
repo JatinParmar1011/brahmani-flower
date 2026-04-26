@@ -1,4 +1,3 @@
-import { useState } from 'react';
 
 const products = [
   { id: 1, name: '10 Red Roses Bouquet',            price: 695, original: 779,  off: 10, rating: 4.9, reviews: 1645, emoji: '💐', bg: '#fce4ec' },
@@ -11,8 +10,7 @@ const products = [
   { id: 8, name: 'Twin Hearts Floral Balloon',       price: 895, original: 1295, off: 31, rating: 4.6, reviews: 8,    emoji: '🎈', bg: '#fce4ec' },
 ];
 
-export default function BestSelling() {
-  const [wished, setWished] = useState({});
+export default function BestSelling({ wishlist = [], toggleWishlist }) {
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
@@ -32,10 +30,10 @@ export default function BestSelling() {
             <div className="relative h-48 flex items-center justify-center" style={{ background: p.bg }}>
               <span className="text-8xl drop-shadow">{p.emoji}</span>
               <button
-                onClick={() => setWished(w => ({ ...w, [p.id]: !w[p.id] }))}
-                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-base cursor-pointer shadow border-none"
+                onClick={(e) => { e.stopPropagation(); toggleWishlist(p.id); }}
+                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-base cursor-pointer shadow border-none hover:scale-110 transition-transform"
               >
-                {wished[p.id] ? '❤️' : '🤍'}
+                {wishlist.includes(p.id) ? '❤️' : '🤍'}
               </button>
             </div>
             <div className="p-4">

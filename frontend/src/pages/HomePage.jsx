@@ -7,12 +7,12 @@ import ShopByRecipient from '../components/ShopByRecipient';
 import InTheSpotlight from '../components/InTheSpotlight';
 import ClientReviews from '../components/ClientReviews';
 
-export default function HomePage() {
+export default function HomePage({ wishlist, toggleWishlist }) {
   return (
     <>
       <HeroSlider />
       <HeroTagline />
-      <BestSelling />
+      <BestSelling wishlist={wishlist} toggleWishlist={toggleWishlist} />
       <PromoBanner />
       <ShopByOccasion />
       <ShopByRecipient />

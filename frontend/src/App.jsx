@@ -7,6 +7,7 @@ import AuthPage from './pages/AuthPage';
 import UserDashboard from './pages/UserDashboard';
 import MorePage from './pages/MorePage';
 import CartPage from './pages/CartPage';
+import WishlistPage from './pages/WishlistPage';
 import './App.css';
 
 const INITIAL_CART = [
@@ -22,6 +23,8 @@ function App() {
   const [morePage, setMorePage] = useState(null);
   const [cartItems, setCartItems] = useState(INITIAL_CART);
   const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
+  const [wishlist, setWishlist] = useState([]);
+  const toggleWishlist = (id) => setWishlist(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const handleAuthDone = (userData) => {
     if (userData) setUser(userData);
@@ -53,6 +56,8 @@ function App() {
         onMoreClick={handleMoreClick}
         onCartClick={() => setPage('cart')}
         cartCount={cartCount}
+        onWishlistClick={() => setPage('wishlist')}
+        wishlistCount={wishlist.length}
         onHome={() => setPage('home')}
       />
       <NavLinks />
@@ -60,7 +65,7 @@ function App() {
       {page === 'home' && (
         <main className="max-w-[1300px] mx-auto px-6 py-8">
           <div className="flex flex-col gap-10">
-            <HomePage />
+            <HomePage wishlist={wishlist} toggleWishlist={toggleWishlist} />
           </div>
         </main>
       )}
@@ -83,9 +88,19 @@ function App() {
 
       {page === 'cart' && (
         <CartPage
+          key="cart"
           cartItems={cartItems}
           setCartItems={setCartItems}
           onBack={() => setPage('home')}
+        />
+      )}
+
+      {page === 'wishlist' && (
+        <WishlistPage
+          wishlist={wishlist}
+          toggleWishlist={toggleWishlist}
+          onBack={() => setPage('home')}
+          onGoToCart={() => setPage('cart')}
         />
       )}
 
