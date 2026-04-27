@@ -8,6 +8,7 @@ import UserDashboard from './pages/UserDashboard';
 import MorePage from './pages/MorePage';
 import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
+import ProductPage from './pages/ProductPage';
 import './App.css';
 
 const INITIAL_CART = [
@@ -17,34 +18,42 @@ const INITIAL_CART = [
 ];
 
 function App() {
-  const [page, setPage]         = useState('home');
-  const [user, setUser]         = useState(null);
-  const [dashTab, setDashTab]   = useState('profile');
-  const [morePage, setMorePage] = useState(null);
-  const [cartItems, setCartItems] = useState(INITIAL_CART);
+  const [page, setPage]               = useState('home');
+  const [user, setUser]               = useState(null);
+  const [dashTab, setDashTab]         = useState('profile');
+  const [morePage, setMorePage]       = useState(null);
+  const [cartItems, setCartItems]     = useState(INITIAL_CART);
+  const [wishlist, setWishlist]       = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
+
   const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
-  const [wishlist, setWishlist] = useState([]);
-  const toggleWishlist = (id) => setWishlist(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const toggleWishlist = (id) =>
+    setWishlist(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const handleAddToCart = (product) => {
+    setCartItems(prev => {
+      const existing = prev.find(i => i.id === product.id);
+      if (existing) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, { ...product, originalPrice: product.original, qty: 1 }];
+    });
+  };
+
+  const handleCategoryClick = (cat) => {
+    setActiveCategory(cat);
+    setPage('product');
+  };
 
   const handleAuthDone = (userData) => {
     if (userData) setUser(userData);
     setPage('home');
   };
 
-  const handleMenuClick = (tab) => {
-    setDashTab(tab);
-    setPage('dashboard');
-  };
+  const handleMenuClick = (tab) => { setDashTab(tab); setPage('dashboard'); };
+  const handleSignOut   = () => { setUser(null); setPage('home'); };
+  const handleMoreClick = (key) => { setMorePage(key); setPage('more'); };
 
-  const handleSignOut = () => {
-    setUser(null);
-    setPage('home');
-  };
-
-  const handleMoreClick = (key) => {
-    setMorePage(key);
-    setPage('more');
-  };
+  const goHome = () => { setPage('home'); setActiveCategory(null); };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -58,9 +67,9 @@ function App() {
         cartCount={cartCount}
         onWishlistClick={() => setPage('wishlist')}
         wishlistCount={wishlist.length}
-        onHome={() => setPage('home')}
+        onHome={goHome}
       />
-      <NavLinks />
+      <NavLinks onCategoryClick={handleCategoryClick} activeCategory={activeCategory} />
 
       {page === 'home' && (
         <main className="max-w-[1300px] mx-auto px-6 py-8">
@@ -70,20 +79,24 @@ function App() {
         </main>
       )}
 
-      {page === 'auth' && (
-        <AuthPage onAuthDone={handleAuthDone} />
-      )}
-
-      {page === 'dashboard' && (
-        <UserDashboard
-          user={user}
-          initialTab={dashTab}
-          onSignOut={handleSignOut}
+      {page === 'product' && (
+        <ProductPage
+          category={activeCategory}
+          wishlist={wishlist}
+          toggleWishlist={toggleWishlist}
+          onAddToCart={handleAddToCart}
+          onBack={goHome}
         />
       )}
 
+      {page === 'auth' && <AuthPage onAuthDone={handleAuthDone} />}
+
+      {page === 'dashboard' && (
+        <UserDashboard user={user} initialTab={dashTab} onSignOut={handleSignOut} />
+      )}
+
       {page === 'more' && (
-        <MorePage pageKey={morePage} onBack={() => setPage('home')} />
+        <MorePage pageKey={morePage} onBack={goHome} />
       )}
 
       {page === 'cart' && (
@@ -91,7 +104,7 @@ function App() {
           key="cart"
           cartItems={cartItems}
           setCartItems={setCartItems}
-          onBack={() => setPage('home')}
+          onBack={goHome}
         />
       )}
 
@@ -99,7 +112,7 @@ function App() {
         <WishlistPage
           wishlist={wishlist}
           toggleWishlist={toggleWishlist}
-          onBack={() => setPage('home')}
+          onBack={goHome}
           onGoToCart={() => setPage('cart')}
         />
       )}
