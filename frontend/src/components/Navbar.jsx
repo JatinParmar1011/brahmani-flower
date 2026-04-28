@@ -66,8 +66,8 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
   const anyOpen = menuOpen || moreOpen;
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      {anyOpen && <div className="fixed inset-0 bg-black/40 z-40" onClick={() => { setMenuOpen(false); setMoreOpen(false); }} />}
+    <header className="sticky top-0 z-[60] bg-white border-b border-gray-200 shadow-sm">
+      {anyOpen && <div className="fixed inset-0 bg-black/40 z-[59]" onClick={() => { setMenuOpen(false); setMoreOpen(false); }} />}
 
       <div className="max-w-[1300px] mx-auto flex items-center px-6 py-3">
 

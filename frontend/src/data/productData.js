@@ -1,3 +1,268 @@
+// Nav mega-menu: each category has columns, each column has a title + items
+export const NAV_MENU = {
+  Flowers: [
+    { title: 'By Flower Type', items: [
+      { label: 'Red Roses',       sub: 'Red Roses' },
+      { label: 'Orchids',         sub: 'Orchids' },
+      { label: 'Sunflowers',      sub: 'Sunflowers' },
+      { label: 'White Lilies',    sub: 'White Lilies' },
+      { label: 'Mixed Bouquets',  sub: 'Mixed Bouquets' },
+    ]},
+    { title: 'By Occasion', items: [
+      { label: 'Birthday Flowers',   sub: 'Balloon Bouquets' },
+      { label: 'Anniversary Blooms', sub: 'Rose Arrangements' },
+      { label: 'Valentine Special',  sub: 'Valentine Day' },
+      { label: 'Sympathy Flowers',   sub: 'White Lilies' },
+    ]},
+    { title: 'By Recipient', items: [
+      { label: 'For Her',       sub: 'Red Roses' },
+      { label: 'For Him',       sub: 'Mixed Bouquets' },
+      { label: 'For Mom',       sub: "Mother's Day" },
+      { label: 'For Friends',   sub: 'Sunflowers' },
+    ]},
+  ],
+  Cakes: [
+    { title: 'By Flavour', items: [
+      { label: 'Chocolate Cakes',  sub: 'Chocolate Cakes' },
+      { label: 'Red Velvet',       sub: 'Red Velvet' },
+      { label: 'Fruit Cakes',      sub: 'Fruit Cakes' },
+      { label: 'Cheesecakes',      sub: 'Cheesecakes' },
+      { label: 'Butterscotch',     sub: 'Fruit Cakes' },
+    ]},
+    { title: 'By Occasion', items: [
+      { label: 'Birthday Cakes',    sub: 'Cake & Roses' },
+      { label: 'Anniversary Cakes', sub: 'Red Velvet' },
+      { label: 'Wedding Cakes',     sub: 'Cheesecakes' },
+      { label: 'Baby Shower',       sub: 'Fruit Cakes' },
+    ]},
+    { title: 'Special', items: [
+      { label: 'Photo Cakes',       sub: 'Photo Cakes' },
+      { label: 'Eggless Cakes',     sub: 'Chocolate Cakes' },
+      { label: 'Designer Cakes',    sub: 'Red Velvet' },
+      { label: 'Mini Cakes',        sub: 'Cheesecakes' },
+    ]},
+  ],
+  Combos: [
+    { title: 'Popular Combos', items: [
+      { label: 'Flowers & Cake',    sub: 'Flowers & Cake' },
+      { label: 'Roses & Choco',     sub: 'Roses & Choco' },
+      { label: 'Teddy & Flowers',   sub: 'Teddy & Flowers' },
+      { label: 'Wine & Roses',      sub: 'Wine & Roses' },
+    ]},
+    { title: 'Gift Combos', items: [
+      { label: 'Spa & Flowers',     sub: 'Spa Kits' },
+      { label: 'Balloon & Cake',    sub: 'Balloon Bouquets' },
+      { label: 'Perfume & Flowers', sub: 'Premium Hampers' },
+      { label: 'Candle & Flowers',  sub: 'Candle Sets' },
+    ]},
+    { title: 'By Occasion', items: [
+      { label: 'Birthday Combos',     sub: 'Gift Hampers' },
+      { label: 'Anniversary Combos',  sub: 'Champagne Combos' },
+      { label: 'Valentine Combos',    sub: 'Valentine Day' },
+      { label: 'Diwali Combos',       sub: 'Diwali Specials' },
+    ]},
+  ],
+  Birthday: [
+    { title: 'Birthday Specials', items: [
+      { label: 'Balloon Bouquets',  sub: 'Balloon Bouquets' },
+      { label: 'Flower Boxes',      sub: 'Flower Boxes' },
+      { label: 'Cake & Roses',      sub: 'Cake & Roses' },
+      { label: 'Gift Hampers',      sub: 'Gift Hampers' },
+      { label: 'Chocolate Box',     sub: 'Ferrero Rocher' },
+    ]},
+    { title: 'Birthday Gifts For', items: [
+      { label: 'For Her',       sub: 'Flower Boxes' },
+      { label: 'For Him',       sub: 'Gift Hampers' },
+      { label: 'For Kids',      sub: 'Balloon Bouquets' },
+      { label: 'For Wife',      sub: 'Cake & Roses' },
+      { label: 'For Husband',   sub: 'Gift Hampers' },
+    ]},
+    { title: 'By Milestone', items: [
+      { label: '1st Birthday',   sub: 'Balloon Bouquets' },
+      { label: '18th Birthday',  sub: 'Flower Boxes' },
+      { label: '21st Birthday',  sub: 'Cake & Roses' },
+      { label: '50th Birthday',  sub: 'Gift Hampers' },
+    ]},
+  ],
+  Anniversary: [
+    { title: 'Anniversary Gifts', items: [
+      { label: 'Rose Arrangements', sub: 'Rose Arrangements' },
+      { label: 'Romantic Sets',     sub: 'Romantic Sets' },
+      { label: 'Infinity Boxes',    sub: 'Infinity Boxes' },
+      { label: 'Champagne Combos',  sub: 'Champagne Combos' },
+      { label: 'Heart Arrangements',sub: 'Rose Arrangements' },
+    ]},
+    { title: 'For Couples', items: [
+      { label: 'For Wife',      sub: 'Rose Arrangements' },
+      { label: 'For Husband',   sub: 'Champagne Combos' },
+      { label: 'For Girlfriend',sub: 'Infinity Boxes' },
+      { label: 'For Boyfriend', sub: 'Romantic Sets' },
+    ]},
+    { title: 'By Year', items: [
+      { label: '1st Anniversary',  sub: 'Rose Arrangements' },
+      { label: '5th Anniversary',  sub: 'Romantic Sets' },
+      { label: '10th Anniversary', sub: 'Champagne Combos' },
+      { label: '25th Anniversary', sub: 'Infinity Boxes' },
+    ]},
+  ],
+  Gifts: [
+    { title: 'Gift Types', items: [
+      { label: 'Premium Hampers',  sub: 'Premium Hampers' },
+      { label: 'Candle Sets',      sub: 'Candle Sets' },
+      { label: 'Jewellery Boxes',  sub: 'Jewellery Boxes' },
+      { label: 'Spa Kits',         sub: 'Spa Kits' },
+      { label: 'Book & Blooms',    sub: 'Premium Hampers' },
+    ]},
+    { title: 'Gifts For', items: [
+      { label: 'For Her',       sub: 'Jewellery Boxes' },
+      { label: 'For Him',       sub: 'Premium Hampers' },
+      { label: 'For Mom',       sub: 'Spa Kits' },
+      { label: 'For Friends',   sub: 'Candle Sets' },
+    ]},
+    { title: 'By Budget', items: [
+      { label: 'Under ₹500',    sub: 'Candle Sets' },
+      { label: '₹500 - ₹1000', sub: 'Jewellery Boxes' },
+      { label: '₹1000 - ₹2000',sub: 'Spa Kits' },
+      { label: 'Above ₹2000',  sub: 'Premium Hampers' },
+    ]},
+  ],
+  Personalised: [
+    { title: 'Personalised Items', items: [
+      { label: 'Name Flower Box',   sub: 'Name Flower Box' },
+      { label: 'Photo Cakes',       sub: 'Photo Cakes' },
+      { label: 'Custom Balloons',   sub: 'Custom Balloons' },
+      { label: 'Engraved Frames',   sub: 'Engraved Frames' },
+      { label: 'Custom Cushions',   sub: 'Name Flower Box' },
+    ]},
+    { title: 'For Occasions', items: [
+      { label: 'Birthday',      sub: 'Custom Balloons' },
+      { label: 'Anniversary',   sub: 'Engraved Frames' },
+      { label: 'Valentine',     sub: 'Name Flower Box' },
+      { label: 'Wedding',       sub: 'Photo Cakes' },
+    ]},
+  ],
+  Plants: [
+    { title: 'Plant Types', items: [
+      { label: 'Indoor Plants',  sub: 'Indoor Plants' },
+      { label: 'Succulents',     sub: 'Succulents' },
+      { label: 'Lucky Plants',   sub: 'Lucky Plants' },
+      { label: 'Bonsai Trees',   sub: 'Bonsai Trees' },
+      { label: 'Air Purifiers',  sub: 'Indoor Plants' },
+    ]},
+    { title: 'By Purpose', items: [
+      { label: 'Good Luck',     sub: 'Lucky Plants' },
+      { label: 'Home Decor',    sub: 'Indoor Plants' },
+      { label: 'Office Plants', sub: 'Succulents' },
+      { label: 'Gift Plants',   sub: 'Bonsai Trees' },
+    ]},
+  ],
+  Chocolates: [
+    { title: 'Chocolate Types', items: [
+      { label: 'Ferrero Rocher',   sub: 'Ferrero Rocher' },
+      { label: 'Belgian Dark',     sub: 'Belgian Dark' },
+      { label: 'Truffle Box',      sub: 'Truffle Box' },
+      { label: 'White Chocolate',  sub: 'White Chocolate' },
+      { label: 'Assorted Box',     sub: 'Truffle Box' },
+    ]},
+    { title: 'Gift Hampers', items: [
+      { label: 'Choco Hamper',     sub: 'Ferrero Rocher' },
+      { label: 'Luxury Box',       sub: 'Belgian Dark' },
+      { label: 'Fondue Kit',       sub: 'Truffle Box' },
+      { label: 'Premium Cocoa',    sub: 'White Chocolate' },
+    ]},
+  ],
+  Occasions: [
+    { title: 'Festivals', items: [
+      { label: 'Diwali Specials',  sub: 'Diwali Specials' },
+      { label: 'Holi Gifts',       sub: 'Diwali Specials' },
+      { label: 'Christmas',        sub: 'New Year' },
+      { label: 'New Year',         sub: 'New Year' },
+      { label: 'Raksha Bandhan',   sub: 'Diwali Specials' },
+    ]},
+    { title: 'Special Days', items: [
+      { label: 'Valentine Day',    sub: 'Valentine Day' },
+      { label: "Mother's Day",     sub: "Mother's Day" },
+      { label: "Father's Day",     sub: "Mother's Day" },
+      { label: 'Friendship Day',   sub: 'Valentine Day' },
+    ]},
+  ],
+  International: [
+    { title: 'Destinations', items: [
+      { label: 'USA Delivery',     sub: 'USA Delivery' },
+      { label: 'UK Delivery',      sub: 'UK Delivery' },
+      { label: 'Dubai Delivery',   sub: 'Dubai Delivery' },
+      { label: 'Asia Pacific',     sub: 'Asia Pacific' },
+      { label: 'Canada',           sub: 'USA Delivery' },
+    ]},
+    { title: 'Popular Gifts', items: [
+      { label: 'Rose Bouquets',    sub: 'Red Roses' },
+      { label: 'Luxury Hampers',   sub: 'Dubai Delivery' },
+      { label: 'Orchid Box',       sub: 'Asia Pacific' },
+      { label: 'Cherry Blossoms',  sub: 'Asia Pacific' },
+    ]},
+  ],
+};
+
+// Subcategory → product id mapping
+export const SUBCATEGORY_PRODUCTS = {
+  // Flowers
+  'Red Roses':        [1, 5, 33],
+  'Orchids':          [3, 2, 7],
+  'Sunflowers':       [6, 8, 4],
+  'Mixed Bouquets':   [8, 4, 6, 1],
+  'White Lilies':     [7, 2, 5],
+  // Cakes
+  'Chocolate Cakes':  [9, 12, 16],
+  'Red Velvet':       [10, 9, 13],
+  'Fruit Cakes':      [13, 14, 15],
+  'Cheesecakes':      [16, 11, 15],
+  // Combos
+  'Flowers & Cake':   [18, 17, 24],
+  'Roses & Choco':    [17, 20, 23],
+  'Teddy & Flowers':  [19, 23, 21],
+  'Wine & Roses':     [22, 17, 24],
+  // Birthday
+  'Balloon Bouquets': [25, 30, 32],
+  'Flower Boxes':     [26, 30, 29],
+  'Cake & Roses':     [27, 31, 26],
+  'Gift Hampers':     [28, 29, 32],
+  // Anniversary
+  'Rose Arrangements':[33, 36, 40],
+  'Romantic Sets':    [35, 37, 38],
+  'Infinity Boxes':   [39, 33, 36],
+  'Champagne Combos': [37, 35, 34],
+  // Gifts
+  'Premium Hampers':  [41, 45, 47],
+  'Candle Sets':      [42, 41, 48],
+  'Jewellery Boxes':  [44, 41, 47],
+  'Spa Kits':         [45, 42, 46],
+  // Personalised
+  'Name Flower Box':  [49, 53, 56],
+  'Photo Cakes':      [50, 49, 55],
+  'Custom Balloons':  [52, 49, 54],
+  'Engraved Frames':  [51, 55, 53],
+  // Plants
+  'Indoor Plants':    [57, 59, 64],
+  'Succulents':       [58, 63, 62],
+  'Lucky Plants':     [62, 59, 61],
+  'Bonsai Trees':     [60, 57, 64],
+  // Chocolates
+  'Ferrero Rocher':   [65, 68, 72],
+  'Belgian Dark':     [66, 67, 71],
+  'Truffle Box':      [67, 65, 70],
+  'White Chocolate':  [69, 66, 72],
+  // Occasions
+  'Diwali Specials':  [73, 76, 80],
+  'Valentine Day':    [77, 73, 78],
+  "Mother's Day":     [78, 77, 74],
+  'New Year':         [76, 73, 79],
+  // International
+  'USA Delivery':     [81, 84, 85],
+  'UK Delivery':      [82, 81, 88],
+  'Dubai Delivery':   [83, 86, 88],
+  'Asia Pacific':     [86, 87, 88, 85],
+};
+
 export const CATEGORY_META = {
   Flowers:       { emoji: '🌸', gradient: 'from-pink-50 to-rose-100',       accent: '#e91e8c', desc: 'Fresh handpicked blooms delivered to your door' },
   Cakes:         { emoji: '🎂', gradient: 'from-amber-50 to-yellow-100',    accent: '#f59e0b', desc: 'Delicious custom cakes for every celebration' },

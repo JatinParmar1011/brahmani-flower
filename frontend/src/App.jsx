@@ -25,6 +25,7 @@ function App() {
   const [cartItems, setCartItems]     = useState(INITIAL_CART);
   const [wishlist, setWishlist]       = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [activeSubcategory, setActiveSubcategory] = useState(null);
 
   const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
 
@@ -41,6 +42,13 @@ function App() {
 
   const handleCategoryClick = (cat) => {
     setActiveCategory(cat);
+    setActiveSubcategory(null);
+    setPage('product');
+  };
+
+  const handleSubcategoryClick = (cat, sub) => {
+    setActiveCategory(cat);
+    setActiveSubcategory(sub);
     setPage('product');
   };
 
@@ -53,7 +61,7 @@ function App() {
   const handleSignOut   = () => { setUser(null); setPage('home'); };
   const handleMoreClick = (key) => { setMorePage(key); setPage('more'); };
 
-  const goHome = () => { setPage('home'); setActiveCategory(null); };
+  const goHome = () => { setPage('home'); setActiveCategory(null); setActiveSubcategory(null); };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,7 +77,7 @@ function App() {
         wishlistCount={wishlist.length}
         onHome={goHome}
       />
-      <NavLinks onCategoryClick={handleCategoryClick} activeCategory={activeCategory} />
+      <NavLinks onCategoryClick={handleCategoryClick} onSubcategoryClick={handleSubcategoryClick} activeCategory={activeCategory} />
 
       {page === 'home' && (
         <main className="max-w-[1300px] mx-auto px-6 py-8">
@@ -82,10 +90,13 @@ function App() {
       {page === 'product' && (
         <ProductPage
           category={activeCategory}
+          subcategory={activeSubcategory}
           wishlist={wishlist}
           toggleWishlist={toggleWishlist}
           onAddToCart={handleAddToCart}
           onBack={goHome}
+          onCategoryClick={handleCategoryClick}
+          onSubcategoryClick={handleSubcategoryClick}
         />
       )}
 
