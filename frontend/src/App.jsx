@@ -9,6 +9,7 @@ import MorePage from './pages/MorePage';
 import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
 import ProductPage from './pages/ProductPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import './App.css';
 
 const INITIAL_CART = [
@@ -26,6 +27,7 @@ function App() {
   const [wishlist, setWishlist]       = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeSubcategory, setActiveSubcategory] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const cartCount = cartItems.reduce((s, i) => s + i.qty, 0);
 
@@ -40,9 +42,15 @@ function App() {
     });
   };
 
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setPage('detail');
+  };
+
   const handleCategoryClick = (cat) => {
     setActiveCategory(cat);
     setActiveSubcategory(null);
+    setSelectedProduct(null);
     setPage('product');
   };
 
@@ -61,7 +69,7 @@ function App() {
   const handleSignOut   = () => { setUser(null); setPage('home'); };
   const handleMoreClick = (key) => { setMorePage(key); setPage('more'); };
 
-  const goHome = () => { setPage('home'); setActiveCategory(null); setActiveSubcategory(null); };
+  const goHome = () => { setPage('home'); setActiveCategory(null); setActiveSubcategory(null); setSelectedProduct(null); };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,6 +105,19 @@ function App() {
           onBack={goHome}
           onCategoryClick={handleCategoryClick}
           onSubcategoryClick={handleSubcategoryClick}
+          onProductClick={handleProductClick}
+        />
+      )}
+
+      {page === 'detail' && selectedProduct && (
+        <ProductDetailPage
+          product={selectedProduct}
+          wishlist={wishlist}
+          toggleWishlist={toggleWishlist}
+          onAddToCart={handleAddToCart}
+          onBack={goHome}
+          onCategoryClick={handleCategoryClick}
+          onSelectProduct={handleProductClick}
         />
       )}
 

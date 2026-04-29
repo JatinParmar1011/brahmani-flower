@@ -5,7 +5,7 @@ import ProductFilters from '../components/product/ProductFilters';
 import ProductGrid from '../components/product/ProductGrid';
 import ProductToast from '../components/product/ProductToast';
 
-export default function ProductPage({ category, subcategory, wishlist, toggleWishlist, onAddToCart, onBack, onCategoryClick, onSubcategoryClick }) {
+export default function ProductPage({ category, subcategory, wishlist, toggleWishlist, onAddToCart, onBack, onCategoryClick, onSubcategoryClick, onProductClick }) {
   const meta = CATEGORY_META[category] || CATEGORY_META['Flowers'];
   const [sort, setSort] = useState('popular');
   const [activeTag, setActiveTag] = useState('All');
@@ -120,6 +120,7 @@ export default function ProductPage({ category, subcategory, wishlist, toggleWis
         wishlist={wishlist}
         toggleWishlist={toggleWishlist}
         onAddToCart={handleAddToCart}
+        onProductClick={onProductClick}
       />
 
       <ProductToast message={toast} onClose={() => setToast('')} />

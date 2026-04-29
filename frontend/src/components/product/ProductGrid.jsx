@@ -1,6 +1,6 @@
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ products, wishlist, toggleWishlist, onAddToCart }) {
+export default function ProductGrid({ products, wishlist, toggleWishlist, onAddToCart, onProductClick }) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -20,6 +20,7 @@ export default function ProductGrid({ products, wishlist, toggleWishlist, onAddT
           wishlist={wishlist}
           toggleWishlist={toggleWishlist}
           onAddToCart={onAddToCart}
+          onProductClick={onProductClick}
         />
       ))}
     </div>

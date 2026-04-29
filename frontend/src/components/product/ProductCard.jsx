@@ -7,12 +7,15 @@ const TAG_COLORS = {
   Luxury:     'bg-yellow-600',
 };
 
-export default function ProductCard({ product, wishlist, toggleWishlist, onAddToCart }) {
+export default function ProductCard({ product, wishlist, toggleWishlist, onAddToCart, onProductClick }) {
   const { id, name, price, original, off, rating, reviews, emoji, bg, tag, delivery } = product;
   const inWishlist = wishlist.includes(id);
 
   return (
-    <div className="group border border-gray-100 rounded-2xl overflow-hidden bg-white hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col">
+    <div
+      onClick={() => onProductClick?.(product)}
+      className="group border border-gray-100 rounded-2xl overflow-hidden bg-white hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer"
+    >
       {/* Image area */}
       <div className="relative h-52 flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
         <span className="text-8xl drop-shadow-md group-hover:scale-110 transition-transform duration-300">{emoji}</span>
@@ -55,7 +58,7 @@ export default function ProductCard({ product, wishlist, toggleWishlist, onAddTo
         </p>
 
         <button
-          onClick={() => onAddToCart(product)}
+          onClick={e => { e.stopPropagation(); onAddToCart(product); }}
           className="mt-auto w-full bg-[#1a6b8a] hover:bg-[#155a75] active:scale-95 text-white text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer"
         >
           Add to Cart
