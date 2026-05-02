@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 
 // ── Mock "database" of registered users (persisted in memory) ─────────────
 // Key: mobile number string, Value: profile object
+const ADMIN_MOBILE = '8888888888';
+
 const REGISTERED_USERS = {
   '9999999999': { name: 'Test User',  email: 'abc123@gmail.com' },
 };
@@ -370,7 +372,7 @@ function StepProfile({ identifier, onDone }) {
 // Flow A — Email entered:   0 → 1(signup mobile) → 2(otp) → 3(profile) → home
 // Flow B — New phone:       0 → 1(signup mobile) → 2(otp) → 3(profile) → home
 // Flow C — Existing phone:  0 → 2(otp login)              → home
-export default function AuthPage({ onAuthDone }) {
+export default function AuthPage({ onAuthDone, onAdminLogin }) {
   const [step, setStep]         = useState(0);
   const [mobile, setMobile]     = useState('');
   const [identifier, setId]     = useState(''); // email or mobile for profile
@@ -382,7 +384,13 @@ export default function AuthPage({ onAuthDone }) {
   // autoNav=false means NEXT button clicked with full 10-digit number
   const handlePhoneNext = (phone, autoNav = false) => {
     setId(phone);
-    if (!autoNav && phone.length === 10 && !!REGISTERED_USERS[phone]) {
+    if (!autoNav && phone.length === 10 && phone === ADMIN_MOBILE) {
+      // Admin login flow
+      setMobile(phone);
+      setIsLogin(true);
+      setTotal(2);
+      setStep(2);
+    } else if (!autoNav && phone.length === 10 && !!REGISTERED_USERS[phone]) {
       // Full 10-digit existing user via NEXT button → login flow
       setMobile(phone);
       setIsLogin(true);
@@ -396,6 +404,7 @@ export default function AuthPage({ onAuthDone }) {
       setStep(1);
     }
   };
+
 
   // Step 0 — email entered
   const handleEmailNext = (email) => {
@@ -422,7 +431,10 @@ export default function AuthPage({ onAuthDone }) {
   const handleSignupMobileNext = (phone) => {
     setMobile(phone);
     setId(phone);
-    if (REGISTERED_USERS[phone]) {
+    if (phone === ADMIN_MOBILE) {
+      setIsLogin(true);
+      setTotal(2);
+    } else if (REGISTERED_USERS[phone]) {
       // Existing user → switch to login flow
       setIsLogin(true);
       setTotal(2);
@@ -434,6 +446,10 @@ export default function AuthPage({ onAuthDone }) {
 
   // Step 2 — OTP verified
   const handleOTPNext = () => {
+    if (mobile === ADMIN_MOBILE) {
+      onAdminLogin && onAdminLogin();
+      return;
+    }
     if (isLogin) {
       const stored = REGISTERED_USERS[mobile];
       const userData = stored

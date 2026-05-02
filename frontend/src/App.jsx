@@ -10,6 +10,7 @@ import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
 import ProductPage from './pages/ProductPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import AdminDashboard from './pages/AdminDashboard';
 import './App.css';
 
 const INITIAL_CART = [
@@ -65,6 +66,8 @@ function App() {
     setPage('home');
   };
 
+  const handleAdminLogin = () => setPage('admin');
+
   const handleMenuClick = (tab) => { setDashTab(tab); setPage('dashboard'); };
   const handleSignOut   = () => { setUser(null); setPage('home'); };
   const handleMoreClick = (key) => { setMorePage(key); setPage('more'); };
@@ -73,19 +76,23 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar
-        onSignIn={() => setPage('auth')}
-        user={user}
-        onSignOut={handleSignOut}
-        onMenuClick={handleMenuClick}
-        onMoreClick={handleMoreClick}
-        onCartClick={() => setPage('cart')}
-        cartCount={cartCount}
-        onWishlistClick={() => setPage('wishlist')}
-        wishlistCount={wishlist.length}
-        onHome={goHome}
-      />
-      <NavLinks onCategoryClick={handleCategoryClick} onSubcategoryClick={handleSubcategoryClick} activeCategory={activeCategory} />
+      {page !== 'admin' && (
+        <>
+          <Navbar
+            onSignIn={() => setPage('auth')}
+            user={user}
+            onSignOut={handleSignOut}
+            onMenuClick={handleMenuClick}
+            onMoreClick={handleMoreClick}
+            onCartClick={() => setPage('cart')}
+            cartCount={cartCount}
+            onWishlistClick={() => setPage('wishlist')}
+            wishlistCount={wishlist.length}
+            onHome={goHome}
+          />
+          <NavLinks onCategoryClick={handleCategoryClick} onSubcategoryClick={handleSubcategoryClick} activeCategory={activeCategory} />
+        </>
+      )}
 
       {page === 'home' && (
         <main className="max-w-[1300px] mx-auto px-6 py-8">
@@ -121,9 +128,11 @@ function App() {
         />
       )}
 
-      {page === 'auth' && <AuthPage onAuthDone={handleAuthDone} />}
+      {page === 'auth' && <AuthPage onAuthDone={handleAuthDone} onAdminLogin={handleAdminLogin} />}
 
-      {page === 'dashboard' && (
+      {page === 'admin' && <AdminDashboard onSignOut={() => { setPage('home'); }} />}
+
+      {page !== 'admin' && page === 'dashboard' && (
         <UserDashboard user={user} initialTab={dashTab} onSignOut={handleSignOut} />
       )}
 
@@ -149,7 +158,7 @@ function App() {
         />
       )}
 
-      <Footer />
+      {page !== 'admin' && <Footer />}
     </div>
   );
 }
