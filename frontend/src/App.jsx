@@ -104,6 +104,7 @@ function App() {
 
       {page === 'product' && (
         <ProductPage
+          key={`${activeCategory}-${activeSubcategory}`}
           category={activeCategory}
           subcategory={activeSubcategory}
           wishlist={wishlist}

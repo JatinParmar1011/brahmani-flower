@@ -16,8 +16,11 @@ export default function ProductPage({ category, subcategory, wishlist, toggleWis
     setToast(`${product.name} added to cart!`);
   };
 
-  // Flatten all items from all columns for the chip strip
-  const subcategoryItems = (NAV_MENU[category] || []).flatMap(col => col.items);
+  // All subcategory items for this category only — no deduplication needed since NAV_MENU[category] is category-specific
+  const subcategoryItems = useMemo(
+    () => (NAV_MENU[category] || []).flatMap(col => col.items),
+    [category]
+  );
 
   const baseProducts = useMemo(() => {
     if (subcategory) {
