@@ -35,11 +35,10 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Order order = Order.builder()
-                .user(user)
-                .shippingAddress(request.getShippingAddress())
-                .status(Order.OrderStatus.PENDING)
-                .build();
+        Order order = new Order();
+        order.setUser(user);
+        order.setShippingAddress(request.getShippingAddress());
+        order.setStatus(Order.OrderStatus.PENDING);
 
         BigDecimal total = BigDecimal.ZERO;
 
@@ -54,12 +53,11 @@ public class OrderServiceImpl implements OrderService {
             product.setStock(product.getStock() - itemReq.getQuantity());
             productRepository.save(product);
 
-            OrderItem item = OrderItem.builder()
-                    .order(order)
-                    .product(product)
-                    .quantity(itemReq.getQuantity())
-                    .unitPrice(product.getPrice())
-                    .build();
+            OrderItem item = new OrderItem();
+            item.setOrder(order);
+            item.setProduct(product);
+            item.setQuantity(itemReq.getQuantity());
+            item.setUnitPrice(product.getPrice());
 
             order.getItems().add(item);
             total = total.add(product.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity())));

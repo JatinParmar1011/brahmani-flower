@@ -129,7 +129,7 @@ function App() {
         />
       )}
 
-      {page === 'auth' && <AuthPage onAuthDone={handleAuthDone} onAdminLogin={handleAdminLogin} />}
+      {page === 'auth' && <AuthPage onAuthDone={handleAuthDone} onAdminLogin={handleAdminLogin} onMoreClick={handleMoreClick} />}
 
       {page === 'admin' && <AdminDashboard onSignOut={() => { setPage('home'); }} />}
 

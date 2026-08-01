@@ -41,15 +41,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
-        Product product = Product.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .stock(request.getStock())
-                .imageUrl(request.getImageUrl())
-                .category(request.getCategory())
-                .available(true)
-                .build();
+        Product product = new Product();
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setStock(request.getStock());
+        product.setImageUrl(request.getImageUrl());
+        product.setCategory(request.getCategory());
+        product.setAvailable(true);
         return toResponse(productRepository.save(product));
     }
 

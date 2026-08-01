@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getProfile, updateProfile } from '../services/authService';
 
 // ── Sidebar nav items ──────────────────────────────────────────────────────
 const NAV = [
@@ -10,82 +11,188 @@ const NAV = [
 
 // ── Profile Panel ──────────────────────────────────────────────────────────
 function ProfilePanel({ user }) {
-  const [form, setForm] = useState({
-    title: user?.title || 'Mr.',
-    name:  user?.name  || '',
-    email: user?.email || '',
-    mobile: user?.mobile || '',
-    dob:   user?.dob   || '',
-  });
-  const [saved, setSaved] = useState(false);
+  const genderFromTitle = t => t === 'Mr.' ? 'Male' : 'Female';
+  const [form, setForm] = useState({ title: '', name: '', email: '', mobile: '', dateOfBirth: '', gender: '' });
+  const [emailVerified, setEmailVerified]   = useState(false);
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [saved, setSaved]   = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  // email verify UI state
+  const [emailCode, setEmailCode]       = useState('');
+  const [emailSent, setEmailSent]       = useState(false);
+  const [sendingCode, setSendingCode]   = useState(false);
+  const [emailError, setEmailError]     = useState('');
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setSaved(false); };
+
+  useEffect(() => {
+    getProfile()
+      .then(data => {
+        setForm({ title: data.title || 'Mr.', name: data.name || '', email: data.email || '', mobile: data.mobileNumber || user?.mobileNumber || '', dateOfBirth: data.dateOfBirth || '', gender: data.gender || '' });
+        setEmailVerified(data.emailVerified || false);
+        setMobileVerified(data.mobileVerified ?? true);
+      })
+      .catch(() => {
+        setForm({ title: user?.title || 'Mr.', name: user?.name || '', email: user?.email || '', mobile: user?.mobileNumber || '', dateOfBirth: user?.dateOfBirth || '', gender: user?.gender || '' });
+        setMobileVerified(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false);
+    try {
+      await updateProfile({ name: form.name, title: form.title, gender: form.gender || genderFromTitle(form.title), dateOfBirth: form.dateOfBirth, email: form.email });
+      setSaved(true);
+    } catch (e) {
+      console.error('Save failed', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendCode = async () => {
+    setEmailError(''); setSendingCode(true);
+    await new Promise(r => setTimeout(r, 800)); // replace with real email API call
+    setEmailSent(true); setSendingCode(false);
+  };
+
+  const handleVerifyCode = () => {
+    if (emailCode.length === 6) { setEmailVerified(true); setEmailError(''); setEmailSent(false); setEmailCode(''); }
+    else setEmailError('Enter the 6-digit code sent to your email.');
+  };
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
 
   const initials = (() => {
     const parts = (form.name || 'U').trim().split(/\s+/);
-    return parts.length === 1
-      ? parts[0][0].toUpperCase()
-      : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return parts.length === 1 ? parts[0][0].toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   })();
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-4 border-[#1a6b8a] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-1">My Profile</h2>
       <p className="text-sm text-gray-400 mb-7">Manage your personal information</p>
 
-      {/* Avatar */}
+      {/* Avatar card */}
       <div className="flex items-center gap-5 mb-8 p-5 bg-gradient-to-r from-[#1a6b8a]/5 to-[#1a6b8a]/10 rounded-2xl border border-[#1a6b8a]/10">
-        <div className="w-16 h-16 rounded-full bg-[#1a6b8a] flex items-center justify-center text-white text-2xl font-bold shadow-lg flex-shrink-0">
-          {initials}
-        </div>
+        <div className="w-16 h-16 rounded-full bg-[#1a6b8a] flex items-center justify-center text-white text-2xl font-bold shadow-lg flex-shrink-0">{initials}</div>
         <div>
           <p className="font-bold text-gray-900 text-lg">{form.name || 'Your Name'}</p>
-          <p className="text-sm text-gray-500">{form.email || form.mobile || 'No contact info'}</p>
+          <p className="text-sm text-gray-500">{form.mobile ? `+91 ${form.mobile}` : 'No mobile'}</p>
         </div>
       </div>
 
-      {/* Form */}
       <div className="grid grid-cols-2 gap-5">
+        {/* Title */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Title</label>
           <select value={form.title} onChange={e => set('title', e.target.value)}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 bg-white transition">
-            {['Mr.','Mrs.','Ms.','Dr.'].map(t => <option key={t}>{t}</option>)}
+            {['Mr.','Mrs.','Ms.'].map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
+
+        {/* Full Name */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Full Name</label>
-          <input type="text" value={form.name} onChange={e => set('name', e.target.value)}
-            placeholder="Your full name"
+          <input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Your full name"
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 transition" />
         </div>
+
+        {/* Mobile — read only + verified tick */}
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
-          <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-            placeholder="your@email.com"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 transition" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Mobile</label>
-          <div className="flex border border-gray-200 rounded-xl overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/20 transition">
-            <span className="flex items-center px-3 bg-gray-50 border-r border-gray-200 text-sm text-gray-500 select-none">🇮🇳 +91</span>
-            <input type="tel" value={form.mobile} onChange={e => set('mobile', e.target.value.replace(/\D/g,'').slice(0,10))}
-              placeholder="10-digit number"
-              className="flex-1 px-4 py-3 text-sm outline-none bg-white" />
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Mobile
+            {mobileVerified && <span className="ml-1.5 text-green-600">✅ Verified</span>}
+          </label>
+          <div className="flex border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+            <span className="flex items-center px-3 border-r border-gray-200 text-sm text-gray-500 select-none">🇮🇳 +91</span>
+            <input type="tel" value={form.mobile} readOnly
+              className="flex-1 px-4 py-3 text-sm outline-none bg-gray-50 text-gray-500 cursor-not-allowed" />
           </div>
         </div>
-        <div className="col-span-2">
+
+        {/* Email + inline verify */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Email
+            {emailVerified
+              ? <span className="ml-1.5 text-green-600">✅ Verified</span>
+              : form.email && <span className="ml-1.5 text-amber-500 text-[10px]">⚠ Not verified</span>
+            }
+          </label>
+          <div className="flex gap-2">
+            <input type="email" value={form.email}
+              onChange={e => {
+                set('email', e.target.value);
+                setEmailSent(false);
+                setEmailVerified(false); // reset verified if email changes
+                setEmailError('');
+              }}
+              placeholder="your@email.com"
+              disabled={emailVerified}
+              className={`flex-1 border rounded-xl px-4 py-3 text-sm outline-none transition focus:ring-2 ${
+                emailVerified
+                  ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'border-gray-200 focus:border-[#1a6b8a] focus:ring-[#1a6b8a]/20'
+              }`}
+            />
+            {isValidEmail && !emailVerified && (
+              <button onClick={handleSendCode} disabled={sendingCode}
+                className="px-3 py-2 bg-[#1a6b8a] hover:bg-[#155a75] disabled:bg-gray-300 text-white text-xs font-bold rounded-xl whitespace-nowrap transition-colors">
+                {sendingCode ? '…' : emailSent ? 'Resend' : 'Send Code'}
+              </button>
+            )}
+          </div>
+          {emailSent && !emailVerified && (
+            <div className="mt-2 flex gap-2">
+              <input type="text" inputMode="numeric" value={emailCode} maxLength={6}
+                onChange={e => { setEmailCode(e.target.value.replace(/\D/g,'').slice(0,6)); setEmailError(''); }}
+                placeholder="6-digit code"
+                className={`flex-1 border rounded-xl px-4 py-2.5 text-sm outline-none transition focus:ring-2 ${
+                  emailError ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-[#1a6b8a] focus:ring-[#1a6b8a]/20'
+                }`}
+              />
+              <button onClick={handleVerifyCode}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors">
+                Verify
+              </button>
+            </div>
+          )}
+          {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
+          {emailSent && !emailVerified && <p className="text-xs text-gray-400 mt-1">Check your inbox for the 6-digit code.</p>}
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Gender</label>
+          <select value={form.gender || genderFromTitle(form.title)} onChange={e => set('gender', e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 bg-white transition">
+            {['Male', 'Female', 'Other'].map(g => <option key={g}>{g}</option>)}
+          </select>
+        </div>
+
+        {/* DOB */}
+        <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Date of Birth</label>
-          <input type="date" value={form.dob} onChange={e => set('dob', e.target.value)}
+          <input type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 transition" />
         </div>
       </div>
 
       <div className="flex items-center gap-3 mt-7">
-        <button onClick={() => setSaved(true)}
-          className="bg-[#1a6b8a] hover:bg-[#155a75] text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors active:scale-[0.98]">
-          Save Changes
+        <button onClick={handleSave} disabled={saving}
+          className="bg-[#1a6b8a] hover:bg-[#155a75] disabled:bg-gray-300 text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors active:scale-[0.98]">
+          {saving ? 'Saving…' : 'Save Changes'}
         </button>
-        {saved && <span className="text-sm text-green-600 font-medium flex items-center gap-1">✅ Saved successfully!</span>}
+        {saved && <span className="text-sm text-green-600 font-medium">✅ Saved successfully!</span>}
       </div>
     </div>
   );
@@ -421,11 +528,21 @@ function TrackOrderPanel() {
 // ── Main UserDashboard ─────────────────────────────────────────────────────
 export default function UserDashboard({ user, initialTab = 'profile', onSignOut }) {
   const [active, setActive] = useState(initialTab);
+  const [profile, setProfile] = useState(user);
+
+  useEffect(() => {
+    getProfile().then(data => setProfile(data)).catch(() => {});
+  }, []);
 
   const getInitials = (name = '') => {
     const parts = name.trim().split(/\s+/);
     return parts.length === 1 ? parts[0][0]?.toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
+
+  const displayName  = profile?.name   || user?.name   || 'User';
+  const displayEmail = profile?.email  || '';
+  const displayPhone = profile?.mobileNumber || user?.mobileNumber || '';
+  const displaySub   = displayEmail || (displayPhone ? `+91 ${displayPhone}` : '');
 
   return (
     <div className="max-w-[1300px] mx-auto px-6 py-8">
@@ -436,10 +553,9 @@ export default function UserDashboard({ user, initialTab = 'profile', onSignOut 
           {/* User card */}
           <div className="bg-gradient-to-br from-[#1a6b8a] to-[#155a75] rounded-2xl p-6 text-white mb-4 shadow-lg">
             <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold mb-3 shadow">
-              {getInitials(user?.name || 'U')}
+              {getInitials(displayName)}
             </div>
-            <p className="font-bold text-lg leading-tight">{user?.name || 'User'}</p>
-            <p className="text-white/70 text-xs mt-1 truncate">{user?.email || (user?.mobile ? `+91 ${user.mobile}` : '')}</p>
+            <p className="font-bold text-lg leading-tight">{displayName}</p>
           </div>
 
           {/* Nav */}

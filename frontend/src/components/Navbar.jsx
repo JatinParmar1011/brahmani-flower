@@ -60,8 +60,8 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
   useOutsideClick(moreRef, () => setMoreOpen(false));
 
   const initials    = user ? getInitials(user.name) : '';
-  const displayName = user?.name || 'User';
-  const displayEmail = user?.email || (user?.mobile ? `+91 ${user.mobile}` : '');
+  const displayName   = user?.name || 'User';
+  const displayMobile = user?.mobileNumber ? `+91 ${user.mobileNumber}` : (user?.mobile ? `+91 ${user.mobile}` : '');
 
   const anyOpen = menuOpen || moreOpen;
 
@@ -144,7 +144,7 @@ export default function Navbar({ onSignIn, user, onSignOut, onMenuClick, onMoreC
                     <div className="w-12 h-12 rounded-full bg-[#1a6b8a] flex items-center justify-center text-white text-lg font-bold flex-shrink-0 shadow">{initials}</div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">{displayEmail}</p>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{displayMobile}</p>
                     </div>
                   </div>
                   <div className="py-2">
