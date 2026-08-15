@@ -8,7 +8,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -23,9 +22,6 @@ public class FirebaseAuthService {
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
-
-    @Value("${app.admin.mobile:8888888888}")
-    private String adminMobile;
 
     @Transactional
     public AuthResponse loginWithFirebaseToken(String idToken) {
@@ -53,19 +49,18 @@ public class FirebaseAuthService {
             isNewUser = !userRepository.existsByMobileNumber(mobile);
             if (isNewUser) {
                 // Don't save yet — return newUser=true so frontend shows profile step
-                User.UserRole role = mobile.equals(adminMobile) ? User.UserRole.ADMIN : User.UserRole.CUSTOMER;
                 User tempUser = new User();
                 tempUser.setMobileNumber(mobile);
                 tempUser.setFirebaseUid(firebaseUid);
                 tempUser.setName(displayName != null ? displayName : "User");
-                tempUser.setRole(role);
+                tempUser.setRole(User.UserRole.CUSTOMER);
                 String jwt = jwtUtil.generateToken(buildUserDetails(tempUser));
                 return AuthResponse.builder()
                         .accessToken(jwt)
                         .tokenType("Bearer")
                         .name(tempUser.getName())
                         .mobileNumber(mobile)
-                        .role(role.name())
+                        .role(User.UserRole.CUSTOMER.name())
                         .newUser(true)
                         .build();
             }
@@ -134,11 +129,10 @@ public class FirebaseAuthService {
         if (mobile == null) throw new RuntimeException("Phone number not found in token");
 
         User user = userRepository.findByMobileNumber(mobile).orElseGet(() -> {
-            User.UserRole role = mobile.equals(adminMobile) ? User.UserRole.ADMIN : User.UserRole.CUSTOMER;
             User newU = new User();
             newU.setMobileNumber(mobile);
             newU.setFirebaseUid(firebaseUid);
-            newU.setRole(role);
+            newU.setRole(User.UserRole.CUSTOMER);
             return newU;
         });
 
