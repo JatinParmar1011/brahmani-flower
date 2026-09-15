@@ -1,23 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getAdminProfile } from '../../services/authService';
 
 export default function AdminProfile({ onSignOut }) {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    name: 'Admin',
-    email: 'admin@brahmaniflowers.com',
-    mobile: '8888888888',
-    role: 'Super Admin',
-    store: 'Brahmani Flowers',
-  });
-  const [saved, setSaved] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  useEffect(() => {
+    getAdminProfile()
+      .then(setProfile)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleSave = () => {
-    setEditing(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+  if (loading) return <div className="flex justify-center items-center h-40 text-gray-400">Loading profile…</div>;
+  if (error)   return <div className="text-red-500 p-6">{error}</div>;
+
+  const initials = profile.name?.charAt(0)?.toUpperCase() ?? 'A';
+
+  const fields = [
+    { label: 'Full Name',      value: profile.name },
+    { label: 'Gender',         value: profile.gender },
+    { label: 'Date of Birth',  value: profile.dateOfBirth },
+    { label: 'Mobile Number',  value: profile.mobileNumber },
+    { label: 'Email Address',  value: profile.email },
+    { label: 'Role',           value: profile.role },
+  ];
 
   return (
     <div className="space-y-6">
@@ -26,77 +34,34 @@ export default function AdminProfile({ onSignOut }) {
         <div className="h-20 bg-gradient-to-r from-[#0f2942] via-[#1a4a6b] to-[#1a6b8a] relative">
           <div className="absolute inset-0 opacity-20"
             style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-          {/* Avatar sits inside the banner, bottom-aligned with padding */}
           <div className="absolute bottom-0 left-8 translate-y-1/2">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#1a6b8a] to-teal-400 flex items-center justify-center text-3xl font-bold text-white shadow-xl border-4 border-white">
-              A
+              {initials}
             </div>
           </div>
         </div>
 
         <div className="px-8 pt-12 pb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">{form.name}</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs bg-gradient-to-r from-[#1a6b8a] to-teal-500 text-white px-2.5 py-0.5 rounded-full font-semibold">{form.role}</span>
-                <span className="text-xs text-gray-400">• {form.store}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {saved && (
-                <span className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg font-medium">
-                  ✅ Saved
-                </span>
-              )}
-              {editing ? (
-                <>
-                  <button onClick={() => setEditing(false)}
-                    className="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-                    Cancel
-                  </button>
-                  <button onClick={handleSave}
-                    className="text-xs px-4 py-2 rounded-lg bg-[#1a6b8a] text-white font-semibold hover:bg-[#155a75] transition-colors shadow-sm">
-                    Save Changes
-                  </button>
-                </>
-              ) : (
-                <button onClick={() => setEditing(true)}
-                  className="text-xs px-4 py-2 rounded-lg border border-[#1a6b8a] text-[#1a6b8a] font-semibold hover:bg-[#1a6b8a]/5 transition-colors">
-                  ✏️ Edit Profile
-                </button>
-              )}
-            </div>
+          <h2 className="text-xl font-bold text-gray-800">{profile.name}</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs bg-gradient-to-r from-[#1a6b8a] to-teal-500 text-white px-2.5 py-0.5 rounded-full font-semibold">
+              {profile.role}
+            </span>
+            <span className="text-xs text-gray-400">• Brahmani Flowers</span>
           </div>
         </div>
       </div>
 
-      {/* Account Information — full width */}
+      {/* Account Information */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h3 className="font-bold text-gray-800 mb-5">Account Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { label: 'Full Name',     key: 'name',   type: 'text' },
-            { label: 'Email Address', key: 'email',  type: 'email' },
-            { label: 'Mobile Number', key: 'mobile', type: 'tel',  readonly: true },
-            { label: 'Role',          key: 'role',   type: 'text', readonly: true },
-          ].map(({ label, key, type, readonly }) => (
-            <div key={key}>
+          {fields.map(({ label, value }) => (
+            <div key={label}>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
-              <input
-                type={type}
-                value={form[key]}
-                readOnly={!editing || readonly}
-                onChange={e => set(key, e.target.value)}
-                className={`w-full border rounded-xl px-4 py-2.5 text-sm outline-none transition-all ${
-                  !editing || readonly
-                    ? 'bg-gray-50 border-gray-100 text-gray-500 cursor-default'
-                    : 'border-gray-300 focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/15 bg-white text-gray-800'
-                }`}
-              />
-              {readonly && editing && (
-                <p className="text-[10px] text-gray-400 mt-1">Cannot be changed</p>
-              )}
+              <div className="w-full border border-gray-100 rounded-xl px-4 py-2.5 text-sm bg-gray-50 text-gray-700">
+                {value || <span className="text-gray-400 italic">Not provided</span>}
+              </div>
             </div>
           ))}
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchGallery } from '../services/galleryService';
 
 // ── FAQ ────────────────────────────────────────────────────────────────────
 const FAQS = [
@@ -192,40 +193,6 @@ function ContactPage() {
 }
 
 // ── Gallery ────────────────────────────────────────────────────────────────
-const CATEGORIES = [
-  { key: 'All',        label: 'All',          icon: '🇮🇳' },
-  { key: 'Decoration', label: 'Decoration',   icon: '🌼' },
-  { key: 'Garlands',   label: 'Garlands',     icon: '🌿' },
-  { key: 'Pooja Decor',label: 'Pooja Decor',  icon: '🕯️' },
-  { key: 'Arch',       label: 'Arch',         icon: '🌸' },
-];
-
-const ALL_GALLERY = [
-  {
-    src: '/gallery/gallery1.jpg',
-    name: 'Marigold Backdrop',
-    desc: 'Traditional marigold & sunflower backdrop with brass diyas for pooja & wedding ceremonies.',
-    category: 'Decoration',
-  },
-  {
-    src: '/gallery/gallery2.jpg',
-    name: 'Sunflower Arch',
-    desc: 'Elegant sunflower & white rose arch with fairy lights — perfect for haldi & engagement.',
-    category: 'Decoration',
-  },
-  {
-    src: '/gallery/gallery4.jpg',
-    name: 'Jasmine Garland Setup',
-    desc: 'Hanging jasmine garlands with pink buds & brass diyas for pooja mandap decoration.',
-    category: 'Pooja Decor',
-  },
-  {
-    src: '/gallery/gallery3.jpg',
-    name: 'Pink & White Tassels',
-    desc: 'Handcrafted pink rose & white mogra tassels — ideal for door hangings & event decor.',
-    category: 'Garlands',
-  },
-];
 
 function GalleryGrid({ items, onOpen }) {
   if (items.length === 0) return (
@@ -309,10 +276,22 @@ function GalleryPage({ onNavigate }) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [selected, setSelected]             = useState(null);
   const [lightboxIdx, setLightboxIdx]       = useState(0);
+  const [allGallery, setAllGallery]         = useState([]);
+
+  useEffect(() => {
+    fetchGallery()
+      .then(items => setAllGallery(items.map(i => ({ src: i.imageUrl, name: i.name, desc: i.description, category: i.category }))))
+      .catch(() => {});
+  }, []);
+
+  const categories = [
+    { key: 'All', label: 'All', icon: '🌺' },
+    ...[...new Set(allGallery.map(g => g.category))].map(c => ({ key: c, label: c, icon: '🌸' })),
+  ];
 
   const filtered = activeCategory === 'All'
-    ? ALL_GALLERY
-    : ALL_GALLERY.filter(g => g.category === activeCategory);
+    ? allGallery
+    : allGallery.filter(g => g.category === activeCategory);
 
   const openLightbox = (item, i) => { setSelected(item); setLightboxIdx(i); };
 
@@ -342,7 +321,7 @@ function GalleryPage({ onNavigate }) {
 
       {/* Category filter tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        {CATEGORIES.map(cat => (
+        {categories.map(cat => (
           <button
             key={cat.key}
             onClick={() => setActiveCategory(cat.key)}
@@ -357,7 +336,7 @@ function GalleryPage({ onNavigate }) {
             <span className={`ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
               activeCategory === cat.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
             }`}>
-              {cat.key === 'All' ? ALL_GALLERY.length : ALL_GALLERY.filter(g => g.category === cat.key).length}
+              {cat.key === 'All' ? allGallery.length : allGallery.filter(g => g.category === cat.key).length}
             </span>
           </button>
         ))}

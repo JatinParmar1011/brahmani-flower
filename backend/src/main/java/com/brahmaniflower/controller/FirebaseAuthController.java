@@ -5,7 +5,9 @@ import com.brahmaniflower.dto.response.AuthResponse;
 import com.brahmaniflower.repository.UserRepository;
 import com.brahmaniflower.service.EmailOtpService;
 import com.brahmaniflower.service.FirebaseAuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,20 @@ public class FirebaseAuthController {
     private final UserRepository userRepository;
     private final EmailOtpService emailOtpService;
 
+    @Value("${app.jwt.expiration-ms}")
+    private long jwtExpirationMs;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    private void setJwtCookie(HttpServletResponse response, String token) {
+        String cookie = "jwt=" + token
+                + "; Path=/; HttpOnly; SameSite=Strict"
+                + "; Max-Age=" + (jwtExpirationMs / 1000)
+                + (cookieSecure ? "; Secure" : "");
+        response.addHeader("Set-Cookie", cookie);
+    }
+
     @GetMapping("/check-mobile")
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkMobile(@RequestParam String mobile) {
         boolean exists = userRepository.existsByMobileNumber(mobile);
@@ -27,20 +43,25 @@ public class FirebaseAuthController {
     }
 
     @PostMapping("/firebase-login")
-    public ResponseEntity<ApiResponse<AuthResponse>> firebaseLogin(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<AuthResponse>> firebaseLogin(
+            @RequestBody Map<String, String> body,
+            HttpServletResponse response) {
         String idToken = body.get("firebaseIdToken");
         if (idToken == null || idToken.isBlank())
             return ResponseEntity.badRequest().body(ApiResponse.error("firebaseIdToken is required"));
-        AuthResponse response = firebaseAuthService.loginWithFirebaseToken(idToken);
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+        AuthResponse authResponse = firebaseAuthService.loginWithFirebaseToken(idToken);
+        setJwtCookie(response, authResponse.getAccessToken());
+        return ResponseEntity.ok(ApiResponse.success("Login successful", authResponse));
     }
 
     @PostMapping("/complete-registration")
-    public ResponseEntity<ApiResponse<AuthResponse>> completeRegistration(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<AuthResponse>> completeRegistration(
+            @RequestBody Map<String, String> body,
+            HttpServletResponse response) {
         String idToken = body.get("firebaseIdToken");
         if (idToken == null || idToken.isBlank())
             return ResponseEntity.badRequest().body(ApiResponse.error("firebaseIdToken is required"));
-        AuthResponse response = firebaseAuthService.completeRegistration(
+        AuthResponse authResponse = firebaseAuthService.completeRegistration(
                 idToken,
                 body.get("name"),
                 body.get("title"),
@@ -48,15 +69,18 @@ public class FirebaseAuthController {
                 body.get("dateOfBirth"),
                 body.get("email")
         );
-        return ResponseEntity.ok(ApiResponse.success("Registration complete", response));
+        setJwtCookie(response, authResponse.getAccessToken());
+        return ResponseEntity.ok(ApiResponse.success("Registration complete", authResponse));
     }
 
     @PostMapping("/complete-google-registration")
-    public ResponseEntity<ApiResponse<AuthResponse>> completeGoogleRegistration(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<AuthResponse>> completeGoogleRegistration(
+            @RequestBody Map<String, String> body,
+            HttpServletResponse response) {
         String phoneIdToken = body.get("phoneIdToken");
         if (phoneIdToken == null || phoneIdToken.isBlank())
             return ResponseEntity.badRequest().body(ApiResponse.error("phoneIdToken is required"));
-        AuthResponse response = firebaseAuthService.completeGoogleRegistration(
+        AuthResponse authResponse = firebaseAuthService.completeGoogleRegistration(
                 phoneIdToken,
                 body.get("googleEmail"),
                 body.get("googleName"),
@@ -64,7 +88,16 @@ public class FirebaseAuthController {
                 body.get("gender"),
                 body.get("dateOfBirth")
         );
-        return ResponseEntity.ok(ApiResponse.success("Registration complete", response));
+        setJwtCookie(response, authResponse.getAccessToken());
+        return ResponseEntity.ok(ApiResponse.success("Registration complete", authResponse));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
+        // Clear the JWT cookie
+        response.addHeader("Set-Cookie",
+                "jwt=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
+        return ResponseEntity.ok(ApiResponse.success("Logged out", null));
     }
 
     @PostMapping("/send-email-otp")

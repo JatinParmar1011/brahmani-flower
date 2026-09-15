@@ -4,6 +4,7 @@ import com.brahmaniflower.dto.response.ApiResponse;
 import com.brahmaniflower.entity.User;
 import com.brahmaniflower.repository.OrderRepository;
 import com.brahmaniflower.repository.UserRepository;
+import com.brahmaniflower.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +26,28 @@ public class AdminController {
     private final OrderRepository orderRepository;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<AdminProfileDto>> getProfile() {
+        String identifier = SecurityUtil.getCurrentUserEmail();
+        User user = userRepository.findByMobileNumber(identifier)
+                .or(() -> userRepository.findByEmail(identifier))
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+        AdminProfileDto profile = new AdminProfileDto(
+                user.getName(),
+                user.getGender(),
+                user.getDateOfBirth(),
+                user.getMobileNumber(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+        return ResponseEntity.ok(ApiResponse.success(profile));
+    }
+
+    public record AdminProfileDto(
+            String name, String gender, String dateOfBirth,
+            String mobileNumber, String email, String role
+    ) {}
 
     @GetMapping("/customers")
     public ResponseEntity<ApiResponse<List<CustomerDto>>> getCustomers() {

@@ -40,8 +40,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/auth/complete-registration").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        // Guest cart — public, identified by session cookie
+                        .requestMatchers(HttpMethod.GET,    "/api/guest-cart").permitAll()
+                        .requestMatchers(HttpMethod.POST,   "/api/guest-cart/add").permitAll()
+                        .requestMatchers(HttpMethod.PUT,    "/api/guest-cart/update").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/guest-cart/remove").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/guest-cart/clear").permitAll()
+                        // merge requires auth (user must be logged in)
+                        .requestMatchers(HttpMethod.POST,   "/api/guest-cart/merge").authenticated()
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/inventory/**").hasRole("ADMIN")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )

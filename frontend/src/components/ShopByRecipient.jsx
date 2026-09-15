@@ -1,15 +1,31 @@
-const recipients = [
-  { label: 'Her',          emoji: '👩',   bg: 'linear-gradient(135deg,#fce4ec,#f8bbd0)' },
-  { label: 'Him',          emoji: '👨',   bg: 'linear-gradient(135deg,#e3f2fd,#bbdefb)' },
-  { label: 'Mom',          emoji: '👩‍👧',  bg: 'linear-gradient(135deg,#f3e5f5,#e1bee7)' },
-  { label: 'Dad',          emoji: '👨‍👦',  bg: 'linear-gradient(135deg,#e8f5e9,#c8e6c9)' },
-  { label: 'Best Friends', emoji: '👯',   bg: 'linear-gradient(135deg,#fff8e1,#ffecb3)' },
-  { label: 'Grandparents', emoji: '👴👵', bg: 'linear-gradient(135deg,#fbe9e7,#ffccbc)' },
-  { label: 'Boss',         emoji: '🤝',   bg: 'linear-gradient(135deg,#e8eaf6,#c5cae9)' },
-  { label: 'Colleagues',   emoji: '👥',   bg: 'linear-gradient(135deg,#e0f7fa,#b2ebf2)' },
-];
+import { useState, useEffect } from 'react';
+import { fetchCategories } from '../services/categoryService';
 
-export default function ShopByRecipient() {
+const EMOJI_MAP = {
+  'Her': '👩', 'Him': '👨', 'Mom': '👩‍👧', 'Dad': '👨‍👦',
+  'Best Friends': '👯', 'Bestest Friends': '👯', 'Grandparents': '👴👵', 'Boss': '🤝', 'Colleagues': '👥',
+};
+const BG_MAP = {
+  'Her':          'linear-gradient(135deg,#fce4ec,#f8bbd0)',
+  'Him':          'linear-gradient(135deg,#e3f2fd,#bbdefb)',
+  'Mom':          'linear-gradient(135deg,#f3e5f5,#e1bee7)',
+  'Dad':          'linear-gradient(135deg,#e8f5e9,#c8e6c9)',
+  'Best Friends':   'linear-gradient(135deg,#fff8e1,#ffecb3)',
+  'Bestest Friends':'linear-gradient(135deg,#fff8e1,#ffecb3)',
+  'Grandparents': 'linear-gradient(135deg,#fbe9e7,#ffccbc)',
+  'Boss':         'linear-gradient(135deg,#e8eaf6,#c5cae9)',
+  'Colleagues':   'linear-gradient(135deg,#e0f7fa,#b2ebf2)',
+};
+
+export default function ShopByRecipient({ onItemClick }) {
+  const [recipients, setRecipients] = useState([]);
+
+  useEffect(() => {
+    fetchCategories('shop_by_recipient')
+      .then(data => setRecipients(data.map(c => ({ label: c.categoryName, emoji: EMOJI_MAP[c.categoryName] || '🌸', bg: BG_MAP[c.categoryName] || '#fce4ec' }))))
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
       <div className="text-center mb-8">
@@ -22,9 +38,13 @@ export default function ShopByRecipient() {
       </div>
       <div className="grid grid-cols-4 gap-5">
         {recipients.map(r => (
-          <div key={r.label} className="rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all bg-white border border-gray-100">
+          <div
+            key={r.label}
+            onClick={() => onItemClick?.({ label: r.label, emoji: r.emoji, bg: r.bg, parent: 'Shop By Recipient' })}
+            className="group rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all bg-white border border-gray-100"
+          >
             <div className="h-44 flex items-center justify-center" style={{ background: r.bg }}>
-              <span className="text-7xl">{r.emoji}</span>
+              <span className="text-7xl group-hover:scale-110 transition-transform duration-300">{r.emoji}</span>
             </div>
             <div className="text-center py-3 text-sm font-semibold text-gray-800 border-t border-gray-100">
               {r.label}

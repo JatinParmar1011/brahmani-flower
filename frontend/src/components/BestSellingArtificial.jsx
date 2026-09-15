@@ -9,7 +9,7 @@ const products = [
   { id: 108, name: 'Mixed Wildflower Wreath',        price: 549, original: 799,  off: 31, rating: 4.7, reviews: 167,  emoji: '💐', bg: '#fff3e0' },
 ];
 
-export default function BestSellingArtificial({ wishlist = [], toggleWishlist }) {
+export default function BestSellingArtificial({ wishlist = [], toggleWishlist, onViewAll, onProductClick }) {
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
       <div className="flex items-end justify-between mb-7">
@@ -17,14 +17,14 @@ export default function BestSellingArtificial({ wishlist = [], toggleWishlist })
           <h2 className="text-xl font-bold text-gray-900">Best Selling Artificial Items</h2>
           <p className="text-sm text-gray-400 mt-1">Long-Lasting Beauty for Every Space</p>
         </div>
-        <button className="bg-[#1a6b8a] hover:bg-[#155a75] text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer">
+        <button onClick={onViewAll} className="bg-[#1a6b8a] hover:bg-[#155a75] text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer">
           View All
         </button>
       </div>
 
       <div className="grid grid-cols-4 gap-5">
         {products.map(p => (
-          <div key={p.id} className="border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all bg-white">
+          <div key={p.id} onClick={() => onProductClick?.(p)} className="border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all bg-white">
             <div className="relative h-48 flex items-center justify-center" style={{ background: p.bg }}>
               <span className="text-8xl drop-shadow">{p.emoji}</span>
               <button

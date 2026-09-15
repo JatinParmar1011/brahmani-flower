@@ -27,7 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return new org.springframework.security.core.userdetails.User(
                 principal, "",
-                Boolean.TRUE.equals(user.getActive()) && user.getStatus() == User.AccountStatus.ACTIVE,
+                user.getStatus() == User.AccountStatus.ACTIVE,
                 true, true, true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );

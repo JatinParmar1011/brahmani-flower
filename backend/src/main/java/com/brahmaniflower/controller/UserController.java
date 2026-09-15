@@ -67,7 +67,7 @@ public class UserController {
         return new ProfileResponse(
                 u.getId(), u.getName(), u.getTitle(), u.getGender(), u.getEmail(),
                 u.getMobileNumber(), u.getDateOfBirth(), u.getEmailVerified(),
-                u.getMobileVerified(), u.getRole().name(), u.getStatus().name(), u.getActive()
+                u.getMobileVerified(), u.getRole().name(), u.getStatus().name()
         );
     }
 
@@ -97,6 +97,6 @@ public class UserController {
     public record ProfileResponse(
             Long userId, String name, String title, String gender, String email,
             String mobileNumber, String dateOfBirth, Boolean emailVerified,
-            Boolean mobileVerified, String role, String status, Boolean active
+            Boolean mobileVerified, String role, String status
     ) {}
 }

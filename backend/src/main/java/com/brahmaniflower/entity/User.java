@@ -1,8 +1,6 @@
 package com.brahmaniflower.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -55,22 +53,23 @@ public class User {
     @Column(nullable = false)
     private AccountStatus status = AccountStatus.ACTIVE;
 
-    @Column(name = "mobile_verified", nullable = false)
+    @Column(name = "is_mobile_verified", nullable = false)
     private Boolean mobileVerified = true;
 
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "is_email_verified", nullable = false)
     private Boolean emailVerified = false;
 
-    @Column(nullable = false)
-    private Boolean active = true;
-
-    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    void onCreate() { this.createdAt = LocalDateTime.now(); }
+
+    @PreUpdate
+    void onUpdate() { this.updatedAt = LocalDateTime.now(); }
 
     public User() {}
 
@@ -109,9 +108,6 @@ public class User {
 
     public Boolean getEmailVerified() { return emailVerified; }
     public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
-
-    public Boolean getActive() { return active; }
-    public void setActive(Boolean active) { this.active = active; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -10,7 +10,7 @@ const products = [
   { id: 8, name: 'Twin Hearts Floral Balloon',       price: 895, original: 1295, off: 31, rating: 4.6, reviews: 8,    emoji: '🎈', bg: '#fce4ec' },
 ];
 
-export default function BestSelling({ wishlist = [], toggleWishlist }) {
+export default function BestSelling({ wishlist = [], toggleWishlist, onViewAll, onProductClick }) {
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
@@ -19,14 +19,14 @@ export default function BestSelling({ wishlist = [], toggleWishlist }) {
           <h2 className="text-xl font-bold text-gray-900">Best Selling Flowers &amp; Gifts</h2>
           <p className="text-sm text-gray-400 mt-1">Surprise Your Loved Ones</p>
         </div>
-        <button className="bg-[#1a6b8a] hover:bg-[#155a75] text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer">
+        <button onClick={onViewAll} className="bg-[#1a6b8a] hover:bg-[#155a75] text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer">
           View All
         </button>
       </div>
 
       <div className="grid grid-cols-4 gap-5">
         {products.map(p => (
-          <div key={p.id} className="border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all bg-white">
+          <div key={p.id} onClick={() => onProductClick?.(p)} className="border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all bg-white">
             <div className="relative h-48 flex items-center justify-center" style={{ background: p.bg }}>
               <span className="text-8xl drop-shadow">{p.emoji}</span>
               <button

@@ -26,9 +26,14 @@ export const userStorage = {
 };
 
 export const clearAuth = async () => {
+  // Remove token first so any subsequent isLoggedIn() checks return false immediately
   tokenStorage.remove();
   userStorage.remove();
   await signOut(auth);
+  // Clear the HttpOnly JWT cookie via backend logout endpoint
+  try {
+    await fetch(`${BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+  } catch { /* ignore */ }
 };
 
 // ── HTTP helpers ───────────────────────────────────────────────────────────
@@ -36,6 +41,7 @@ const post = async (url, body) => {
   const res = await fetch(`${BASE_URL}${url}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -50,6 +56,7 @@ const patch = async (url, body) => {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${tokenStorage.get()}`,
     },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -135,6 +142,41 @@ export const getProfile = async () => {
   if (!data.success) throw new Error(data.message);
   return data.data;
 };
+
+// ── Get admin profile ─────────────────────────────────────────────────────
+export const getAdminProfile = async () => {
+  const res = await fetch(`${BASE_URL}/admin/profile`, {
+    headers: { 'Authorization': `Bearer ${tokenStorage.get()}` },
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message);
+  return data.data;
+};
+
+// ── Address Book ──────────────────────────────────────────────────────────
+const authFetch = async (url, options = {}) => {
+  const res = await fetch(`${BASE_URL}${url}`, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${tokenStorage.get()}`,
+      ...options.headers,
+    },
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || 'Request failed');
+  return data.data;
+};
+
+export const getAddresses   = ()         => authFetch('/user/addresses');
+export const createAddress  = (body)     => authFetch('/user/addresses',           { method: 'POST',  body: JSON.stringify(body) });
+export const updateAddress  = (id, body) => authFetch(`/user/addresses/${id}`,     { method: 'PUT',   body: JSON.stringify(body) });
+export const setDefaultAddr = (id)       => authFetch(`/user/addresses/${id}/default`, { method: 'PATCH' });
+export const deleteAddress  = (id)       => authFetch(`/user/addresses/${id}`,     { method: 'DELETE' });
+
+// ── Cart merge (called after login — now handled via /api/guest-cart/merge) ─────────────────
+// mergeGuestCartApi removed — use mergeGuestCartOnLogin() from cartService.js
 
 // ── Auth state helpers ─────────────────────────────────────────────────────
 export const isAuthenticated = () => !!tokenStorage.get();

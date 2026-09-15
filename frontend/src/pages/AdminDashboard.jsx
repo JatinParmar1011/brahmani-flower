@@ -1,22 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminStats from '../components/admin/AdminStats';
 import AdminOrders from '../components/admin/AdminOrders';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminProfile from '../components/admin/AdminProfile';
 import AdminCustomers from '../components/admin/AdminCustomers';
+import AdminGallery from '../components/admin/AdminGallery';
+import { getAdminProfile } from '../services/authService';
 
 const PAGE_TITLE = {
   dashboard: { title: 'Dashboard Overview',  sub: 'Welcome back, Admin 👋' },
   orders:    { title: 'Orders Management',   sub: 'Track and manage all orders' },
   products:  { title: 'Products',            sub: 'Manage your flower inventory' },
   customers: { title: 'Customers',           sub: 'View registered customers' },
+  gallery:   { title: 'Gallery',             sub: 'Manage gallery images' },
   profile:   { title: 'My Profile',          sub: 'Manage your admin account' },
 };
 
 export default function AdminDashboard({ onSignOut }) {
   const [tab, setTab] = useState('dashboard');
+  const [adminInfo, setAdminInfo] = useState({ name: '', mobileNumber: '' });
   const { title, sub } = PAGE_TITLE[tab] || PAGE_TITLE.dashboard;
+
+  useEffect(() => {
+    getAdminProfile().then(p => setAdminInfo(p)).catch(() => {});
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -36,10 +44,12 @@ export default function AdminDashboard({ onSignOut }) {
             onClick={() => setTab('profile')}
             className="flex items-center gap-2.5 bg-gradient-to-r from-[#1a6b8a]/10 to-pink-50 border border-[#1a6b8a]/20 rounded-xl px-3 py-2 hover:border-[#1a6b8a]/40 transition-colors"
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1a6b8a] to-teal-500 flex items-center justify-center text-white text-xs font-bold">A</div>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1a6b8a] to-teal-500 flex items-center justify-center text-white text-xs font-bold">
+              {adminInfo.name?.charAt(0)?.toUpperCase() || 'A'}
+            </div>
             <div className="text-left">
-              <p className="text-xs font-semibold text-gray-700 leading-tight">Admin</p>
-              <p className="text-[10px] text-gray-400">8888888888</p>
+              <p className="text-xs font-semibold text-gray-700 leading-tight">{adminInfo.name || 'Admin'}</p>
+
             </div>
           </button>
         </header>
@@ -50,6 +60,7 @@ export default function AdminDashboard({ onSignOut }) {
           {tab === 'orders'    && <AdminOrders />}
           {tab === 'products'  && <AdminProducts />}
           {tab === 'customers' && <AdminCustomers />}
+          {tab === 'gallery'   && <AdminGallery />}
           {tab === 'profile'   && <AdminProfile onSignOut={onSignOut} />}
         </main>
       </div>
