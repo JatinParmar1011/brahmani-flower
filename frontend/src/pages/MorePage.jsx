@@ -280,8 +280,13 @@ function GalleryPage({ onNavigate }) {
 
   useEffect(() => {
     fetchGallery()
-      .then(items => setAllGallery(items.map(i => ({ src: i.imageUrl, name: i.name, desc: i.description, category: i.category }))))
-      .catch(() => {});
+      .then(photos => setAllGallery(photos.map(p => ({
+        src: p.imageUrl,
+        name: p.name,
+        desc: p.description,
+        category: p.category,
+      }))))
+      .catch(err => console.error('Failed to load gallery:', err));
   }, []);
 
   const categories = [

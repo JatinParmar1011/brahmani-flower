@@ -171,6 +171,21 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Page<OrderResponse> getAllOrders(String status, Pageable pageable) {
+        if (status == null || status.isBlank() || status.equalsIgnoreCase("All")) {
+            return orderRepository.findAll(pageable).map(o -> toResponse(o, false));
+        }
+        Order.OrderStatus parsed;
+        try {
+            parsed = Order.OrderStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // Unknown status value → treat as no filter rather than failing the request.
+            return orderRepository.findAll(pageable).map(o -> toResponse(o, false));
+        }
+        return orderRepository.findByStatus(parsed, pageable).map(o -> toResponse(o, false));
+    }
+
+    @Override
     public List<OrderResponse.StatusHistoryResponse> getStatusHistory(Long orderId, String userIdentifier) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", orderId));

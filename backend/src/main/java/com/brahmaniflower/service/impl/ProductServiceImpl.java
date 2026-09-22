@@ -59,6 +59,8 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse createProduct(ProductRequest request) {
         ProductDetail product = new ProductDetail();
         mapFields(request, product);
+        // Stock is owned by the inventory subsystem. New products start at 0 stock
+        // (ProductDetail.stock defaults to 0) and are stocked via InventoryService.adjustStock.
         ProductDetail saved = productDetailRepository.save(product);
         saveCategories(saved, request.getCategoryIds());
         return toResponse(saved);
@@ -69,6 +71,8 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         ProductDetail product = findById(id);
         mapFields(request, product);
+        // Intentionally NOT updating stock here — catalog edits must never touch stock.
+        // Stock changes go exclusively through InventoryService.adjustStock (audited & locked).
         ProductDetail saved = productDetailRepository.save(product);
         mappingRepository.deleteByProduct_Id(saved.getId());
         entityManager.flush();
@@ -90,7 +94,6 @@ public class ProductServiceImpl implements ProductService {
         p.setContains(r.getContains());
         p.setPrice(r.getPrice());
         p.setOriginalPrice(r.getOriginalPrice());
-        p.setStock(r.getStock());
         p.setRating(r.getRating() != null ? r.getRating() : java.math.BigDecimal.ZERO);
         p.setReviewCount(r.getReviewCount() != null ? r.getReviewCount() : 0);
         p.setTag("None".equals(r.getTag()) ? null : r.getTag());

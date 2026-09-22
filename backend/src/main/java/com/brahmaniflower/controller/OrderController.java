@@ -69,8 +69,9 @@ public class OrderController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<OrderResponse>>> getAllOrders(
+            @RequestParam(value = "status", required = false) String status,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(orderService.getAllOrders(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(orderService.getAllOrders(status, pageable)));
     }
 
     // ── Admin: single order detail ────────────────────────────────────────

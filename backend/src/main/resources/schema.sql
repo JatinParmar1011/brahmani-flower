@@ -277,21 +277,58 @@ CREATE TABLE IF NOT EXISTS order_status_history (
 );
 
 -- ============================================================
--- GALLERY ITEMS
+-- GALLERY
 -- ============================================================
-CREATE TABLE IF NOT EXISTS gallery_items (
+-- gallery_category_mst : master table of gallery categories (CRUD only)
+CREATE TABLE IF NOT EXISTS gallery_category_mst (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
-    name            VARCHAR(255)    NOT NULL,
+    name            VARCHAR(100)    NOT NULL,
     description     VARCHAR(500),
-    category        VARCHAR(100)    NOT NULL,
-    image_url       VARCHAR(500),
     display_order   INT             NOT NULL DEFAULT 0,
     status          VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE',
     created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX idx_gi_category (category),
-    INDEX idx_gi_status   (status)
+    UNIQUE KEY uk_gallery_category_name (name),
+    INDEX idx_gcm_status (status)
+);
+
+-- gallery_image_detail : photos (name, description, image url) belonging to a category
+CREATE TABLE IF NOT EXISTS gallery_image_detail (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    category_id         BIGINT          NOT NULL,
+    name                VARCHAR(255)    NOT NULL,
+    description         VARCHAR(500),
+    image_url           VARCHAR(500)    NOT NULL,
+    display_order       INT             NOT NULL DEFAULT 0,
+    status              VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE',
+    created_at          DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_gid_category FOREIGN KEY (category_id) REFERENCES gallery_category_mst(id) ON DELETE CASCADE,
+    INDEX idx_gid_category (category_id),
+    INDEX idx_gid_status   (status)
+);
+
+-- ============================================================
+-- HOMEPAGE MEDIA
+-- ============================================================
+-- homepage_media_detail : media (images or videos) shown on the public homepage,
+-- grouped by a fixed section (SLIDER = hero slider, CITY_DELIVERY = city delivery
+-- banner, ADVERTISE = promo/advertise banner, SPOTLIGHT = spotlight videos).
+-- "section" plays the role of the category.
+CREATE TABLE IF NOT EXISTS homepage_media_detail (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    section             VARCHAR(30)     NOT NULL,
+    title               VARCHAR(255),
+    media_url           VARCHAR(500)    NOT NULL,
+    display_order       INT             NOT NULL DEFAULT 0,
+    status              VARCHAR(20)     NOT NULL DEFAULT 'ACTIVE',
+    created_at          DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_hmd_section (section),
+    INDEX idx_hmd_status  (status)
 );
 
 -- ============================================================

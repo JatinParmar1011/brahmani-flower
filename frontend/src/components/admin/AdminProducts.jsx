@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchProducts, deleteProduct } from '../../services/productService';
 import AddProduct from './AddProduct';
 import ProductDetailPanel from './ProductDetailPanel';
+import ManageStock from './ManageStock';
 
 const STATUS_STYLE = {
   Active: 'bg-emerald-100 text-emerald-700',
@@ -18,7 +19,10 @@ const TAG_STYLE = {
 };
 
 const getStatus = (stock) =>
-  stock === 0 ? 'Out of Stock' : stock <= 8 ? 'Low Stock' : 'Active';
+  stock === 0 ? 'Out of Stock' : stock <= 10 ? 'Low Stock' : 'Active';
+
+const TAG_OPTIONS = ['All', 'Bestseller', 'Trending', 'New', 'Popular', 'Premium', 'Luxury', 'None'];
+const STATUS_OPTIONS = ['All', 'Active', 'Low Stock', 'Out of Stock'];
 
 const toFormInitial = (p) => ({
   id: p.id,
@@ -48,7 +52,12 @@ export default function AdminProducts() {
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState('');
+  const [searchKey, setSearchKey]     = useState('name'); // 'id' | 'name'
+  const [searchValue, setSearchValue] = useState('');
+  const [tagFilter, setTagFilter]   = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [stockOp, setStockOp]       = useState('>');      // '>' | '<' | '='
+  const [stockValue, setStockValue] = useState('');
   const [view, setView]         = useState('list');
   const [selected, setSelected] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -95,9 +104,40 @@ export default function AdminProducts() {
     showToast(isEdit ? `✅ "${savedProduct?.name}" updated successfully!` : `🌸 "${savedProduct?.name}" published successfully!`);
   };
 
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = products.filter(p => {
+    // 1) ID or Name — segmented search identical to the customer (AdminCustomers) filter:
+    //    pick the field (ID or Name) on the left, type the value on the right.
+    const q = searchValue.trim().toLowerCase();
+    const matchesIdName =
+      q === '' ||
+      (searchKey === 'id'
+        ? String(p.id).includes(q)
+        : p.name.toLowerCase().includes(q));
+
+    // 2) Tag
+    const matchesTag =
+      tagFilter === 'All' ||
+      (tagFilter === 'None' ? !p.tag : p.tag === tagFilter);
+
+    // 2b) Status (derived from stock, same rule as the Status column)
+    const matchesStatus =
+      statusFilter === 'All' || getStatus(p.stock) === statusFilter;
+
+    // 3) Stock comparison
+    let matchesStock = true;
+    if (stockValue !== '') {
+      const n = Number(stockValue);
+      if (!Number.isNaN(n)) {
+        const stock = p.stock ?? 0;
+        matchesStock =
+          stockOp === '>' ? stock > n :
+          stockOp === '<' ? stock < n :
+          stock === n; // '='
+      }
+    }
+
+    return matchesIdName && matchesTag && matchesStatus && matchesStock;
+  });
 
   // ── Views ──────────────────────────────────────────────────────────────
   if (view === 'add') {
@@ -119,7 +159,20 @@ export default function AdminProducts() {
       <ProductDetailPanel
         product={selected}
         onEdit={() => setView('edit')}
+        onManageStock={() => setView('manageStock')}
         onBack={() => { setSelected(null); setView('list'); }}
+      />
+    );
+  }
+
+  if (view === 'manageStock' && selected) {
+    return (
+      <ManageStock
+        product={selected}
+        onStockUpdated={(updated) =>
+          setProducts(prev => prev.map(p => p.id === updated.id ? { ...p, stock: updated.stock } : p))
+        }
+        onBack={() => setView('detail')}
       />
     );
   }
@@ -163,11 +216,54 @@ export default function AdminProducts() {
               <h3 className="font-bold text-gray-800 text-lg">All Products</h3>
               <p className="text-xs text-gray-400 mt-0.5">{filtered.length} of {total} products</p>
             </div>
-            <div className="flex items-center gap-3">
-              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search products…"
-                className="border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/15 w-48 transition-all"
-              />
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Filter 1 — ID or Name: field selector + value (same style as AdminCustomers) */}
+              <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
+                <select value={searchKey} onChange={e => { setSearchKey(e.target.value); setSearchValue(''); }}
+                  className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2 outline-none cursor-pointer">
+                  <option value="id">ID</option>
+                  <option value="name">Name</option>
+                </select>
+                <input type="text" value={searchValue} onChange={e => setSearchValue(e.target.value)}
+                  placeholder={`Search by ${searchKey}…`}
+                  className="px-3 py-2 text-sm outline-none w-44 bg-white" />
+              </div>
+
+              {/* Filter 2 — Tag: fixed label + tag value dropdown */}
+              <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
+                <span className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2">Tag</span>
+                <select value={tagFilter} onChange={e => setTagFilter(e.target.value)}
+                  className="px-3 py-2 text-sm outline-none bg-white cursor-pointer">
+                  {TAG_OPTIONS.map(t => (
+                    <option key={t} value={t}>{t === 'All' ? 'All Tags' : t}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter 3 — Status: fixed label + status value dropdown */}
+              <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
+                <span className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2">Status</span>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                  className="px-3 py-2 text-sm outline-none bg-white cursor-pointer">
+                  {STATUS_OPTIONS.map(s => (
+                    <option key={s} value={s}>{s === 'All' ? 'All Status' : s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter 3 — Stock: fixed label + operator select + value */}
+              <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
+                <span className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2">Stock</span>
+                <select value={stockOp} onChange={e => setStockOp(e.target.value)}
+                  className="px-2 py-2 text-sm outline-none bg-white border-r border-gray-200 cursor-pointer">
+                  <option value=">">{'>'}</option>
+                  <option value="<">{'<'}</option>
+                  <option value="=">{'='}</option>
+                </select>
+                <input type="number" value={stockValue} onChange={e => setStockValue(e.target.value)}
+                  placeholder="qty"
+                  className="px-3 py-2 text-sm outline-none w-20 bg-white" />
+              </div>
               <button onClick={() => setView('add')}
                 className="flex items-center gap-2 bg-[#1a6b8a] hover:bg-[#155a75] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap">
                 + Add Product
@@ -186,20 +282,21 @@ export default function AdminProducts() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 uppercase tracking-wide bg-gray-50">
-                  {['Product', 'Price', 'MRP', 'Stock', 'Tag', 'Status', 'Actions'].map(h => (
+                  {['# ID', 'Product', 'Price', 'MRP', 'Stock', 'Tag', 'Status', 'Actions'].map(h => (
                     <th key={h} className="px-5 py-3 text-left whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-gray-300 text-sm">No products found</td></tr>
+                  <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-300 text-sm">No products found</td></tr>
                 ) : filtered.map(p => {
                   const status = getStatus(p.stock);
                   return (
                     <tr key={p.id}
                       className="hover:bg-gray-50/60 transition-colors cursor-pointer"
                       onClick={() => { setSelected(p); setView('detail'); }}>
+                      <td className="px-5 py-3.5 text-gray-400 font-mono text-xs whitespace-nowrap">#{p.id}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           {p.imageUrl
@@ -224,6 +321,8 @@ export default function AdminProducts() {
                         <div className="flex gap-3">
                           <button onClick={() => { setSelected(p); setView('edit'); }}
                             className="text-xs text-[#1a6b8a] hover:underline font-medium">Edit</button>
+                          <button onClick={() => { setSelected(p); setView('manageStock'); }}
+                            className="text-xs text-emerald-600 hover:underline font-medium">Manage Stock</button>
                           <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
                             className="text-xs text-red-400 hover:underline font-medium disabled:opacity-50">
                             {deleting === p.id ? '…' : 'Delete'}

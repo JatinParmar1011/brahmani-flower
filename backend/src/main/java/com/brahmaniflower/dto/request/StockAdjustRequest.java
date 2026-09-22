@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 public class StockAdjustRequest {
 
     @NotNull(message = "Transaction type is required")
-    private String transactionType; // RESTOCK | ADJUSTMENT | DAMAGE | RETURN
+    private String transactionType; // RESTOCK
 
     @NotNull(message = "Quantity is required")
     private Integer quantity;

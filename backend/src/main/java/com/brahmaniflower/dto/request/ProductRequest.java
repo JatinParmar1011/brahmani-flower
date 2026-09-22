@@ -23,10 +23,6 @@ public class ProductRequest {
     @DecimalMin(value = "0.01")
     private BigDecimal originalPrice;
 
-    @NotNull(message = "Stock is required")
-    @Min(value = 0, message = "Stock cannot be negative")
-    private Integer stock;
-
     private BigDecimal rating;
     private Integer reviewCount;
     private String tag;

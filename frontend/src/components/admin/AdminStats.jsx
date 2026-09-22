@@ -6,12 +6,13 @@ import { getAuthHeader } from '../../services/authService';
 const BASE_URL = 'http://localhost:8080/api';
 
 const STATUS_STYLE = {
-  CONFIRMED:       'bg-blue-100 text-blue-700',
-  PROCESSING:      'bg-indigo-100 text-indigo-700',
-  SHIPPED:         'bg-cyan-100 text-cyan-700',
-  DELIVERED:       'bg-emerald-100 text-emerald-700',
-  CANCELLED:       'bg-red-100 text-red-700',
-  PENDING_PAYMENT: 'bg-amber-100 text-amber-700',
+  CONFIRMED:        'bg-blue-100 text-blue-700',
+  PROCESSING:       'bg-indigo-100 text-indigo-700',
+  SHIPPED:          'bg-cyan-100 text-cyan-700',
+  OUT_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
+  DELIVERED:        'bg-emerald-100 text-emerald-700',
+  CANCELLED:        'bg-red-100 text-red-700',
+  PENDING_PAYMENT:  'bg-amber-100 text-amber-700',
 };
 
 const fmtDate = (iso) => iso
@@ -151,7 +152,7 @@ export default function AdminStats({ onViewAllOrders }) {
                     <td className="px-6 py-3.5 text-gray-400 text-xs whitespace-nowrap">{fmtDate(o.createdAt)}</td>
                     <td className="px-6 py-3.5">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_STYLE[o.status] || 'bg-gray-100 text-gray-600'}`}>
-                        {o.status?.replace('_', ' ')}
+                        {o.status?.replaceAll('_', ' ')}
                       </span>
                     </td>
                   </tr>

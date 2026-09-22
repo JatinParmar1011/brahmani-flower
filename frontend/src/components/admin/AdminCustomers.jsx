@@ -9,6 +9,7 @@ export default function AdminCustomers() {
   const [loading, setLoading]     = useState(true);
   const [searchKey, setSearchKey] = useState('name');
   const [search, setSearch]       = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [selected, setSelected]   = useState(null);
 
   useEffect(() => {
@@ -21,6 +22,14 @@ export default function AdminCustomers() {
   if (selected) return <CustomerDetail customer={selected} onBack={() => setSelected(null)} />;
 
   const filtered = customers.filter(c => {
+    // Status filter (Active / Inactive)
+    const isActive = c.status === 'ACTIVE';
+    const matchesStatus =
+      statusFilter === 'All' ||
+      (statusFilter === 'Active' ? isActive : !isActive);
+    if (!matchesStatus) return false;
+
+    // Search filter
     if (!search.trim()) return true;
     const val = search.trim().toLowerCase();
     if (searchKey === 'id')     return String(c.id).includes(val);
@@ -57,6 +66,7 @@ export default function AdminCustomers() {
             <h3 className="font-bold text-gray-800 text-lg">Customers</h3>
             <p className="text-xs text-gray-400 mt-0.5">{filtered.length} results</p>
           </div>
+          <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
             <select
               value={searchKey}
@@ -75,6 +85,18 @@ export default function AdminCustomers() {
               placeholder={`Search by ${searchKey}…`}
               className="px-3 py-2 text-sm outline-none w-52 bg-white"
             />
+          </div>
+
+          {/* Status filter — same segmented style as product filters */}
+          <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
+            <span className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2">Status</span>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="px-3 py-2 text-sm outline-none bg-white cursor-pointer">
+              {['All', 'Active', 'Inactive'].map(s => (
+                <option key={s} value={s}>{s === 'All' ? 'All Status' : s}</option>
+              ))}
+            </select>
+          </div>
           </div>
         </div>
         <div className="overflow-x-auto">

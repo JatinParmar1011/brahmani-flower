@@ -41,6 +41,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/complete-registration").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        // Public gallery (photos + categories) — GET only
+                        .requestMatchers(HttpMethod.GET, "/api/gallery").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/gallery/**").permitAll()
+                        // Public homepage media — GET only
+                        .requestMatchers(HttpMethod.GET, "/api/homepage-media").permitAll()
                         // Guest cart — public, identified by session cookie
                         .requestMatchers(HttpMethod.GET,    "/api/guest-cart").permitAll()
                         .requestMatchers(HttpMethod.POST,   "/api/guest-cart/add").permitAll()

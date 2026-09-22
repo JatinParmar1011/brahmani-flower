@@ -4,6 +4,7 @@ const NAV = [
   { key: 'products',  icon: '🌸', label: 'Products' },
   { key: 'customers', icon: '👥', label: 'Customers' },
   { key: 'gallery',   icon: '🖼️', label: 'Gallery' },
+  { key: 'homepage',  icon: '🏠', label: 'Homepage Media' },
   { key: 'profile',   icon: '👤', label: 'My Profile' },
 ];
 

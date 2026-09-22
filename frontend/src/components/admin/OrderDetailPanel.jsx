@@ -2,33 +2,36 @@ import { useState, useEffect } from 'react';
 import { fetchAdminOrderDetail, updateOrderStatusApi } from '../../services/orderService';
 
 const STATUS_STYLE = {
-  CONFIRMED:       'bg-blue-100 text-blue-700',
-  PROCESSING:      'bg-indigo-100 text-indigo-700',
-  SHIPPED:         'bg-cyan-100 text-cyan-700',
-  DELIVERED:       'bg-emerald-100 text-emerald-700',
-  CANCELLED:       'bg-red-100 text-red-700',
-  PENDING_PAYMENT: 'bg-amber-100 text-amber-700',
+  CONFIRMED:        'bg-blue-100 text-blue-700',
+  PROCESSING:       'bg-indigo-100 text-indigo-700',
+  SHIPPED:          'bg-cyan-100 text-cyan-700',
+  OUT_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
+  DELIVERED:        'bg-emerald-100 text-emerald-700',
+  CANCELLED:        'bg-red-100 text-red-700',
+  PENDING_PAYMENT:  'bg-amber-100 text-amber-700',
 };
 
 const STATUS_ICON = {
   CONFIRMED: '✅', PROCESSING: '⚙️', SHIPPED: '🚚',
-  DELIVERED: '📦', CANCELLED: '❌', PENDING_PAYMENT: '⏳',
+  OUT_FOR_DELIVERY: '🛵', DELIVERED: '📦', CANCELLED: '❌', PENDING_PAYMENT: '⏳',
 };
 
 const VALID_NEXT = {
-  PENDING_PAYMENT: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED:       ['PROCESSING', 'CANCELLED'],
-  PROCESSING:      ['SHIPPED',    'CANCELLED'],
-  SHIPPED:         ['DELIVERED'],
-  DELIVERED:       [],
-  CANCELLED:       [],
+  PENDING_PAYMENT:  ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED:        ['PROCESSING', 'CANCELLED'],
+  PROCESSING:       ['SHIPPED',    'CANCELLED'],
+  SHIPPED:          ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED'],
+  DELIVERED:        [],
+  CANCELLED:        [],
 };
 
 const TRACK_STEPS = [
-  { key: 'CONFIRMED',  label: 'Confirmed'  },
-  { key: 'PROCESSING', label: 'Processing' },
-  { key: 'SHIPPED',    label: 'Shipped'    },
-  { key: 'DELIVERED',  label: 'Delivered'  },
+  { key: 'CONFIRMED',        label: 'Confirmed'        },
+  { key: 'PROCESSING',       label: 'Processing'       },
+  { key: 'SHIPPED',          label: 'Shipped'          },
+  { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+  { key: 'DELIVERED',        label: 'Delivered'        },
 ];
 
 const fmtDate = (iso) => iso
@@ -72,7 +75,7 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
       setOrder(updated);
       onStatusChanged?.(updated);
       setReason('');
-      showToast(`Order marked as ${newStatus.replace('_', ' ')}`);
+      showToast(`Order marked as ${newStatus.replaceAll('_', ' ')}`);
     } catch (e) {
       setError(e.message || 'Failed to update status');
     } finally {
@@ -109,6 +112,7 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
 
   // Track which step is active (for cancelled orders show cancelled state)
   const cancelled = order?.status === 'CANCELLED';
+  const delivered = order?.status === 'DELIVERED';
   const currentStepIdx = TRACK_STEPS.findIndex(s => s.key === order?.status);
 
   return (
@@ -136,7 +140,7 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
           </div>
         </div>
         <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${STATUS_STYLE[order?.status] || 'bg-gray-100 text-gray-600'}`}>
-          {STATUS_ICON[order?.status]} {order?.status?.replace('_', ' ')}
+          {STATUS_ICON[order?.status]} {order?.status?.replaceAll('_', ' ')}
         </span>
       </div>
 
@@ -213,14 +217,14 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
                 <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 z-0" />
                 <div
                   className="absolute top-4 left-4 h-0.5 bg-[#1a6b8a] z-0 transition-all duration-700"
-                  style={{ width: currentStepIdx >= 0 ? `${(currentStepIdx / (TRACK_STEPS.length - 1)) * (100 - 8)}%` : '0%' }}
+                  style={{ width: delivered ? `${100 - 8}%` : currentStepIdx >= 0 ? `${(currentStepIdx / (TRACK_STEPS.length - 1)) * (100 - 8)}%` : '0%' }}
                 />
                 <div className="relative z-10 flex justify-between">
                   {TRACK_STEPS.map((s, i) => {
-                    const done    = i < currentStepIdx;
-                    const current = i === currentStepIdx;
+                    const done    = i < currentStepIdx || delivered;
+                    const current = i === currentStepIdx && !delivered;
                     return (
-                      <div key={s.key} className="flex flex-col items-center gap-2" style={{ width: '25%' }}>
+                      <div key={s.key} className="flex flex-col items-center gap-2" style={{ width: `${100 / TRACK_STEPS.length}%` }}>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                           done    ? 'bg-[#1a6b8a] border-[#1a6b8a] text-white'
                         : current ? 'bg-white border-[#1a6b8a] text-[#1a6b8a] shadow-md ring-4 ring-[#1a6b8a]/20'
@@ -253,12 +257,12 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
                         <div className="flex items-center gap-2">
                           {h.fromStatus && (
                             <>
-                              <span className="text-xs text-gray-400">{h.fromStatus.replace('_', ' ')}</span>
+                              <span className="text-xs text-gray-400">{h.fromStatus.replaceAll('_', ' ')}</span>
                               <span className="text-gray-300 text-xs">→</span>
                             </>
                           )}
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_STYLE[h.toStatus] || 'bg-gray-100 text-gray-600'}`}>
-                            {h.toStatus?.replace('_', ' ')}
+                            {h.toStatus?.replaceAll('_', ' ')}
                           </span>
                         </div>
                         <span className="text-[11px] text-gray-400">{fmtDate(h.createdAt)}</span>
@@ -330,7 +334,7 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
                         <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         Updating…
                       </span>
-                    ) : `Mark as ${s.replace('_', ' ')}`}
+                    ) : `Mark as ${s.replaceAll('_', ' ')}`}
                   </button>
                 ))}
               </div>

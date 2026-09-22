@@ -2,9 +2,12 @@ package com.brahmaniflower.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "inventory_transactions")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class InventoryTransaction {
 
     public enum TransactionType {
@@ -17,6 +20,7 @@ public class InventoryTransaction {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
     private ProductDetail product;
 
     @Enumerated(EnumType.STRING)

@@ -6,7 +6,7 @@ const TAGS     = ['None', 'Bestseller', 'Trending', 'New', 'Popular', 'Premium',
 const DELIVERY = ['Tomorrow', 'Same Day', '2-3 Days'];
 
 const EMPTY = {
-  name: '', price: '', originalPrice: '', stock: '', tag: 'None',
+  name: '', price: '', originalPrice: '', tag: 'None',
   description: '', contains: '', delivery: 'Tomorrow',
   highlight1: '', highlight2: '', highlight3: '', highlight4: '',
   slots: [null, null, null, null, null],
@@ -284,7 +284,6 @@ export default function AddProduct({ initial, onSave, onCancel }) {
     if (form.categoryIds.length === 0)  e.categoryIds = 'Select at least one category';
     if (!form.price)                    e.price       = 'Required';
     if (!form.originalPrice)            e.originalPrice = 'Required';
-    if (!form.stock)                    e.stock       = 'Required';
     if (!form.description.trim())       e.description = 'Description is required';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -304,7 +303,6 @@ export default function AddProduct({ initial, onSave, onCancel }) {
         name: form.name,
         price: parseFloat(form.price),
         originalPrice: parseFloat(form.originalPrice),
-        stock: parseInt(form.stock),
         tag: form.tag === 'None' ? null : form.tag,
         description: form.description,
         contains: form.contains,
@@ -435,19 +433,12 @@ export default function AddProduct({ initial, onSave, onCancel }) {
                     placeholder="1099" className={inputCls(errors.originalPrice)} />
                 </Field>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Stock Quantity" required error={errors.stock}>
-                  <input type="number" value={form.stock}
-                    onChange={e => { set('stock', e.target.value); clearErr('stock'); }}
-                    placeholder="50" className={inputCls(errors.stock)} />
-                </Field>
-                <Field label="Product Tag">
-                  <select value={form.tag} onChange={e => set('tag', e.target.value)}
-                    className={inputCls(false) + ' bg-white'}>
-                    {TAGS.map(t => <option key={t}>{t}</option>)}
-                  </select>
-                </Field>
-              </div>
+              <Field label="Product Tag">
+                <select value={form.tag} onChange={e => set('tag', e.target.value)}
+                  className={inputCls(false) + ' bg-white'}>
+                  {TAGS.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
             </div>
           </Section>
 

@@ -23,6 +23,8 @@ public interface OrderService {
 
     Page<OrderResponse> getAllOrders(Pageable pageable);
 
+    Page<OrderResponse> getAllOrders(String status, Pageable pageable);
+
     List<OrderResponse.StatusHistoryResponse> getStatusHistory(Long orderId, String userIdentifier);
 
     // Legacy — kept for backward compatibility; delegates to checkout internally

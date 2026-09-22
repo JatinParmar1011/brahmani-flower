@@ -6,6 +6,7 @@ import AdminProducts from '../components/admin/AdminProducts';
 import AdminProfile from '../components/admin/AdminProfile';
 import AdminCustomers from '../components/admin/AdminCustomers';
 import AdminGallery from '../components/admin/AdminGallery';
+import AdminHomepageMedia from '../components/admin/AdminHomepageMedia';
 import { getAdminProfile } from '../services/authService';
 
 const PAGE_TITLE = {
@@ -13,7 +14,8 @@ const PAGE_TITLE = {
   orders:    { title: 'Orders Management',   sub: 'Track and manage all orders' },
   products:  { title: 'Products',            sub: 'Manage your flower inventory' },
   customers: { title: 'Customers',           sub: 'View registered customers' },
-  gallery:   { title: 'Gallery',             sub: 'Manage gallery images' },
+  gallery:   { title: 'Gallery Management',  sub: 'Manage gallery categories and photos' },
+  homepage:  { title: 'Homepage Media',      sub: 'Manage hero slider, city delivery, advertise images and spotlight videos' },
   profile:   { title: 'My Profile',          sub: 'Manage your admin account' },
 };
 
@@ -61,6 +63,7 @@ export default function AdminDashboard({ onSignOut }) {
           {tab === 'products'  && <AdminProducts />}
           {tab === 'customers' && <AdminCustomers />}
           {tab === 'gallery'   && <AdminGallery />}
+          {tab === 'homepage'  && <AdminHomepageMedia />}
           {tab === 'profile'   && <AdminProfile onSignOut={onSignOut} />}
         </main>
       </div>

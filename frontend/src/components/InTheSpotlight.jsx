@@ -1,19 +1,48 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 
-const videos = [
-  { id: 1, title: 'Interflora At Design One',        color: '#f8bbd0', emoji: '🌸' },
-  { id: 2, title: 'Say it Beautifully with Flowers',  color: '#fce4ec', emoji: '💐' },
-  { id: 3, title: 'And Romantic Blooms',              color: '#ffcdd2', emoji: '🌹' },
-  { id: 4, title: 'The iconic Udaipur Wedding',       color: '#e8f5e9', emoji: '💒' },
-  { id: 5, title: 'Designing Love in Petals',         color: '#f3e5f5', emoji: '🌺' },
-  { id: 6, title: 'Blooms & Beyond',                  color: '#fff8e1', emoji: '🌼' },
-];
+// A single spotlight video card with a real play/pause toggle.
+function SpotlightCard({ video }) {
+  const videoRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
 
-export default function InTheSpotlight() {
+  const toggle = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play();
+      setPlaying(true);
+    } else {
+      el.pause();
+      setPlaying(false);
+    }
+  };
+
+  return (
+    <div className="flex-shrink-0 w-56 rounded-xl overflow-hidden cursor-pointer shadow-md hover:scale-[1.02] transition-transform bg-black">
+      <div className="h-72 relative" onClick={toggle}>
+        <video
+          ref={videoRef}
+          src={video.mediaUrl}
+          className="w-full h-full object-cover"
+          playsInline
+          loop
+          onEnded={() => setPlaying(false)}
+        />
+      </div>
+      {video.title && (
+        <div className="bg-black/55 text-white text-sm font-semibold px-4 py-3 leading-snug">
+          {video.title}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function InTheSpotlight({ videos = [] }) {
   const scrollRef = useRef(null);
-  const [playing, setPlaying] = useState(null);
-
   const scroll = (dir) => scrollRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
+
+  const hasVideos = videos && videos.length > 0;
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
@@ -22,40 +51,30 @@ export default function InTheSpotlight() {
         <p className="text-sm text-gray-400 mt-1">Classic modern bouquets</p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => scroll(-1)}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-gray-200 shadow text-2xl flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
-        >‹</button>
+      {hasVideos ? (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => scroll(-1)}
+            className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-gray-200 shadow text-2xl flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+          >‹</button>
 
-        <div ref={scrollRef} className="flex gap-4 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
-          {videos.map(v => (
-            <div
-              key={v.id}
-              className="flex-shrink-0 w-56 rounded-xl overflow-hidden cursor-pointer shadow-md hover:scale-[1.02] transition-transform"
-              style={{ background: v.color }}
-            >
-              <div className="h-72 flex items-center justify-center relative">
-                <span className="text-[90px] opacity-60">{v.emoji}</span>
-                <button
-                  onClick={() => setPlaying(playing === v.id ? null : v.id)}
-                  className="absolute w-14 h-14 rounded-full bg-black/65 hover:bg-black/85 text-white text-xl flex items-center justify-center border-none cursor-pointer transition-colors"
-                >
-                  {playing === v.id ? '⏸' : '▶'}
-                </button>
-              </div>
-              <div className="bg-black/55 text-white text-sm font-semibold px-4 py-3 leading-snug">
-                {v.title}
-              </div>
-            </div>
-          ))}
+          <div ref={scrollRef} className="flex gap-4 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+            {videos.map(v => (
+              <SpotlightCard key={v.id} video={v} />
+            ))}
+          </div>
+
+          <button
+            onClick={() => scroll(1)}
+            className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-gray-200 shadow text-2xl flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+          >›</button>
         </div>
-
-        <button
-          onClick={() => scroll(1)}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-white border border-gray-200 shadow text-2xl flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
-        >›</button>
-      </div>
+      ) : (
+        <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-400 h-72">
+          <div className="text-4xl mb-2">🎬</div>
+          <p className="text-sm font-medium">No videos found</p>
+        </div>
+      )}
     </div>
   );
 }

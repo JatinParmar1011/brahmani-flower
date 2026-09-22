@@ -53,6 +53,41 @@ public class CloudinaryService {
         }
     }
 
+    // Upload single image to Cloudinary under "brahmani-flower/homepage" folder
+    public String uploadHomepageImage(MultipartFile file) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "brahmani-flower/homepage",
+                            "resource_type", "image",
+                            "quality", "auto",
+                            "fetch_format", "auto"
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Image upload failed: " + e.getMessage());
+        }
+    }
+
+    // Upload single video to Cloudinary under "brahmani-flower/homepage" folder
+    public String uploadHomepageVideo(MultipartFile file) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "brahmani-flower/homepage",
+                            "resource_type", "video",
+                            "quality", "auto"
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Video upload failed: " + e.getMessage());
+        }
+    }
+
     // Upload up to 5 images, returns list of URLs
     public List<String> uploadImages(List<MultipartFile> files) {
         List<String> urls = new ArrayList<>();
@@ -72,6 +107,17 @@ public class CloudinaryService {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         } catch (IOException e) {
             throw new RuntimeException("Image delete failed: " + e.getMessage());
+        }
+    }
+
+    // Delete video from Cloudinary using public_id extracted from URL
+    public void deleteVideo(String videoUrl) {
+        if (videoUrl == null || videoUrl.isBlank()) return;
+        try {
+            String publicId = extractPublicId(videoUrl);
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "video"));
+        } catch (IOException e) {
+            throw new RuntimeException("Video delete failed: " + e.getMessage());
         }
     }
 

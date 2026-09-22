@@ -14,7 +14,7 @@ import java.util.List;
 public class Order {
 
     public enum OrderStatus {
-        PENDING_PAYMENT, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+        PENDING_PAYMENT, CONFIRMED, PROCESSING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
     }
 
     public static boolean isValidTransition(OrderStatus from, OrderStatus to) {
@@ -22,7 +22,8 @@ public class Order {
             case PENDING_PAYMENT -> to == OrderStatus.CONFIRMED || to == OrderStatus.CANCELLED;
             case CONFIRMED       -> to == OrderStatus.PROCESSING || to == OrderStatus.CANCELLED;
             case PROCESSING      -> to == OrderStatus.SHIPPED    || to == OrderStatus.CANCELLED;
-            case SHIPPED         -> to == OrderStatus.DELIVERED;
+            case SHIPPED         -> to == OrderStatus.OUT_FOR_DELIVERY || to == OrderStatus.CANCELLED;
+            case OUT_FOR_DELIVERY -> to == OrderStatus.DELIVERED;
             case DELIVERED, CANCELLED -> false;
         };
     }

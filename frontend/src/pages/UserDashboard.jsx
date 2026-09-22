@@ -204,16 +204,17 @@ function ProfilePanel({ user }) {
 
 // ── Order History Panel ────────────────────────────────────────────────────
 const statusStyle = {
-  CONFIRMED:       'bg-blue-100 text-blue-700',
-  PROCESSING:      'bg-indigo-100 text-indigo-700',
-  SHIPPED:         'bg-cyan-100 text-cyan-700',
-  DELIVERED:       'bg-green-100 text-green-700',
-  CANCELLED:       'bg-red-100 text-red-600',
-  PENDING_PAYMENT: 'bg-amber-100 text-amber-700',
+  CONFIRMED:        'bg-blue-100 text-blue-700',
+  PROCESSING:       'bg-indigo-100 text-indigo-700',
+  SHIPPED:          'bg-cyan-100 text-cyan-700',
+  OUT_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
+  DELIVERED:        'bg-green-100 text-green-700',
+  CANCELLED:        'bg-red-100 text-red-600',
+  PENDING_PAYMENT:  'bg-amber-100 text-amber-700',
 };
 const statusIcon = {
   CONFIRMED: '✅', PROCESSING: '⚙️', SHIPPED: '🚚',
-  DELIVERED: '✅', CANCELLED: '❌', PENDING_PAYMENT: '⏳',
+  OUT_FOR_DELIVERY: '🛵', DELIVERED: '✅', CANCELLED: '❌', PENDING_PAYMENT: '⏳',
 };
 
 function OrderCard({ o }) {
@@ -236,7 +237,7 @@ function OrderCard({ o }) {
             </p>
           </div>
           <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyle[o.status] || 'bg-gray-100 text-gray-600'}`}>
-            {o.status?.replace('_', ' ')}
+            {o.status?.replaceAll('_', ' ')}
           </span>
         </div>
         <p className="text-sm text-gray-700 mb-3">
@@ -270,7 +271,7 @@ function OrderCard({ o }) {
           <div className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 border border-gray-100 shadow-sm">
             <span className="text-lg">{statusIcon[o.status] || '📦'}</span>
             <div>
-              <p className="text-xs font-bold text-gray-700">Status: {o.status?.replace('_', ' ')}</p>
+              <p className="text-xs font-bold text-gray-700">Status: {o.status?.replaceAll('_', ' ')}</p>
             </div>
           </div>
         </div>
@@ -499,9 +500,9 @@ function AddressBookPanel() {
 }
 
 // ── Track Order Panel ────────────────────────────────────────────────────
-const TRACK_STEPS = ['Order Placed', 'Confirmed', 'Processing', 'Shipped', 'Delivered'];
+const TRACK_STEPS = ['Order Placed', 'Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
 const STATUS_STEP = {
-  PENDING_PAYMENT: 0, CONFIRMED: 1, PROCESSING: 2, SHIPPED: 3, DELIVERED: 4, CANCELLED: -1,
+  PENDING_PAYMENT: 0, CONFIRMED: 1, PROCESSING: 2, SHIPPED: 3, OUT_FOR_DELIVERY: 4, DELIVERED: 5, CANCELLED: -1,
 };
 
 function TrackOrderPanel() {
@@ -529,6 +530,7 @@ function TrackOrderPanel() {
 
   const step = tracked ? (STATUS_STEP[tracked.status] ?? 0) : 0;
   const cancelled = tracked?.status === 'CANCELLED';
+  const delivered = tracked?.status === 'DELIVERED';
 
   return (
     <div>
@@ -556,8 +558,8 @@ function TrackOrderPanel() {
               <p className="font-bold text-gray-900">{tracked.orderNumber}</p>
             </div>
             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-              cancelled ? 'bg-red-100 text-red-600' : 'bg-[#1a6b8a]/10 text-[#1a6b8a]'
-            }`}>{tracked.status?.replace('_', ' ')}</span>
+              statusStyle[tracked.status] || 'bg-gray-100 text-gray-600'
+            }`}>{tracked.status?.replaceAll('_', ' ')}</span>
           </div>
 
           {cancelled ? (
@@ -569,15 +571,15 @@ function TrackOrderPanel() {
             <div className="relative">
               <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 z-0" />
               <div className="absolute top-4 left-4 h-0.5 bg-[#1a6b8a] z-0 transition-all duration-700"
-                style={{ width: `${(step / (TRACK_STEPS.length - 1)) * (100 - 8)}%` }} />
+                style={{ width: `${(delivered ? 1 : step / (TRACK_STEPS.length - 1)) * (100 - 8)}%` }} />
               <div className="relative z-10 flex justify-between">
                 {TRACK_STEPS.map((s, i) => (
                   <div key={s} className="flex flex-col items-center gap-2" style={{ width: '20%' }}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                      i < step ? 'bg-[#1a6b8a] border-[#1a6b8a] text-white' :
+                      (i < step || delivered) ? 'bg-[#1a6b8a] border-[#1a6b8a] text-white' :
                       i === step ? 'bg-white border-[#1a6b8a] text-[#1a6b8a] shadow-md ring-4 ring-[#1a6b8a]/20' :
                       'bg-white border-gray-300 text-gray-400'
-                    }`}>{i < step ? '✓' : i + 1}</div>
+                    }`}>{(i < step || delivered) ? '✓' : i + 1}</div>
                     <p className={`text-[10px] text-center leading-tight font-medium ${i <= step ? 'text-[#1a6b8a]' : 'text-gray-400'}`}>{s}</p>
                   </div>
                 ))}

@@ -39,7 +39,7 @@ const fmtDate = (iso) => iso
   : '—';
 
 // ── Inventory Panel ────────────────────────────────────────────────────────
-function InventoryPanel({ product, onStockUpdated }) {
+export function InventoryPanel({ product, onStockUpdated }) {
   const [txType, setTxType]   = useState('RESTOCK');
   const [qty, setQty]         = useState('');
   const [notes, setNotes]     = useState('');
@@ -48,12 +48,14 @@ function InventoryPanel({ product, onStockUpdated }) {
   const [success, setSuccess] = useState('');
   const [txns, setTxns]       = useState([]);
   const [txLoading, setTxLoading] = useState(true);
+  const [txError, setTxError] = useState('');
 
   const loadTxns = () => {
     setTxLoading(true);
+    setTxError('');
     fetchInventoryTransactions(product.id)
       .then(data => setTxns(data.content ?? []))
-      .catch(() => {})
+      .catch(e => setTxError(e.message || 'Failed to load transactions'))
       .finally(() => setTxLoading(false));
   };
 
@@ -89,7 +91,7 @@ function InventoryPanel({ product, onStockUpdated }) {
         <div className="flex-1 text-sm text-gray-500">
           {(product.stock ?? 0) === 0
             ? <span className="text-red-500 font-semibold">⚠️ Out of stock</span>
-            : (product.stock ?? 0) <= 8
+            : (product.stock ?? 0) <= 10
             ? <span className="text-amber-500 font-semibold">⚠️ Low stock</span>
             : <span className="text-green-600 font-semibold">✅ In stock</span>}
         </div>
@@ -103,7 +105,7 @@ function InventoryPanel({ product, onStockUpdated }) {
             <label className="block text-xs text-gray-400 mb-1">Type</label>
             <select value={txType} onChange={e => setTxType(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 bg-white transition">
-              {['RESTOCK', 'ADJUSTMENT', 'DAMAGE', 'RETURN'].map(t => (
+              {['RESTOCK', 'ADJUSTMENT'].map(t => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
@@ -113,7 +115,7 @@ function InventoryPanel({ product, onStockUpdated }) {
               Quantity {txType === 'ADJUSTMENT' ? '(+/-)' : ''}
             </label>
             <input type="number" value={qty} onChange={e => setQty(e.target.value)}
-              placeholder={txType === 'ADJUSTMENT' ? 'e.g. -5 or +10' : 'e.g. 20'}
+              placeholder={txType === 'ADJUSTMENT' ? 'e.g. -5 or 10' : 'e.g. 20'}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 transition" />
           </div>
         </div>
@@ -135,6 +137,8 @@ function InventoryPanel({ product, onStockUpdated }) {
           <div className="flex justify-center py-4">
             <div className="w-6 h-6 border-2 border-[#1a6b8a] border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : txError ? (
+          <p className="text-xs text-red-500 text-center py-4">{txError}</p>
         ) : txns.length === 0 ? (
           <p className="text-xs text-gray-400 text-center py-4">No transactions yet</p>
         ) : (
@@ -161,16 +165,14 @@ function InventoryPanel({ product, onStockUpdated }) {
 }
 
 // ── Main ProductDetailPanel ────────────────────────────────────────────────
-export default function ProductDetailPanel({ product: initialProduct, onEdit, onBack }) {
-  const [product, setProduct] = useState(initialProduct);
-
+export default function ProductDetailPanel({ product, onEdit, onManageStock, onBack }) {
   const images = [
     product.imageUrl, product.imageUrl2, product.imageUrl3,
     product.imageUrl4, product.imageUrl5,
   ].filter(Boolean);
 
   const stock  = product.stock ?? 0;
-  const status = stock === 0 ? 'Out of Stock' : stock <= 8 ? 'Low Stock' : 'Active';
+  const status = stock === 0 ? 'Out of Stock' : stock <= 10 ? 'Low Stock' : 'Active';
 
   const highlights = [
     product.highlight1, product.highlight2,
@@ -191,10 +193,18 @@ export default function ProductDetailPanel({ product: initialProduct, onEdit, on
             <p className="text-xs text-gray-400">Product ID: #{product.id}</p>
           </div>
         </div>
-        <button onClick={onEdit}
-          className="flex items-center gap-2 bg-[#1a6b8a] hover:bg-[#155a75] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm">
-          ✏️ Edit Product
-        </button>
+        <div className="flex items-center gap-3">
+          {onManageStock && (
+            <button onClick={onManageStock}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+              📦 Manage Stock
+            </button>
+          )}
+          <button onClick={onEdit}
+            className="flex items-center gap-2 bg-[#1a6b8a] hover:bg-[#155a75] text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+            ✏️ Edit Product
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -243,8 +253,6 @@ export default function ProductDetailPanel({ product: initialProduct, onEdit, on
             )}
           </div>
 
-          {/* Inventory Management — NEW */}
-          <InventoryPanel product={product} onStockUpdated={updated => setProduct(p => ({ ...p, stock: updated.stock }))} />
         </div>
 
         {/* Right */}

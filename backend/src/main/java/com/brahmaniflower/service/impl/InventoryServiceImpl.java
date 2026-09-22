@@ -76,14 +76,17 @@ public class InventoryServiceImpl implements InventoryService {
 
     /**
      * Determines the signed stock delta based on transaction type.
-     * RESTOCK / RETURN → positive; SALE / DAMAGE / CANCELLATION → negative; ADJUSTMENT → signed by caller.
+     * RESTOCK → positive; SALE → negative; CANCELLATION restores stock;
+     * ADJUSTMENT → signed value provided by the caller (may be + or -).
      */
     private int resolveStockDelta(InventoryTransaction.TransactionType type, int quantity) {
         return switch (type) {
-            case RESTOCK, RETURN -> Math.abs(quantity);
-            case SALE, DAMAGE    -> -Math.abs(quantity);
-            case CANCELLATION    -> Math.abs(quantity);   // cancellation restores stock
-            case ADJUSTMENT      -> quantity;              // caller provides signed value
+            case RESTOCK      -> Math.abs(quantity);
+            case SALE         -> -Math.abs(quantity);
+            case CANCELLATION -> Math.abs(quantity);   // cancellation restores stock
+            case ADJUSTMENT   -> quantity;             // caller provides signed value
+            case RETURN, DAMAGE ->
+                    throw new BadRequestException("Unsupported transaction type: " + type);
         };
     }
 }

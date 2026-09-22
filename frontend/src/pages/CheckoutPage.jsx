@@ -553,7 +553,7 @@ export { StepPayment };
 // STEP 4 — ORDER SUCCESS
 // ─────────────────────────────────────────────────────────────────────────────
 function OrderSuccess({ order, onViewOrders, onContinue }) {
-  const steps = ['Order Confirmed', 'Processing', 'Shipped', 'Delivered'];
+  const steps = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
   return (
     <div className="text-center">
       {/* Animated checkmark */}
