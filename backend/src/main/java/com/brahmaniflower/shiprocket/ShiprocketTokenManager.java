@@ -20,7 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Manages Shiprocket authentication tokens.
  *
  * Strategy:
- *  - Tokens are cached in memory and expire after TOKEN_EXPIRY_SECONDS (default 24h).
+ *  - Tokens are cached in memory and expire after TOKEN_EXPIRY_SECONDS (default 23h).
  *  - A ReentrantLock prevents concurrent token refresh races.
  *  - Re-authentication is attempted on 401 responses from the Shiprocket client.
  *  - Credentials are NEVER logged.
@@ -30,8 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Slf4j
 public class ShiprocketTokenManager {
 
-    private static final long TOKEN_EXPIRY_SECONDS = 23 * 60 * 60; // 23 hours (Shiprocket tokens last 24h)
-    private static final int  MAX_AUTH_RETRIES     = 1;
+    private static final long TOKEN_EXPIRY_SECONDS = 23 * 60 * 60; // 23 hours
 
     private final ShiprocketProperties props;
     private final ObjectMapper          objectMapper;
@@ -40,31 +39,24 @@ public class ShiprocketTokenManager {
     private volatile Instant tokenExpiry;
     private final    ReentrantLock lock = new ReentrantLock();
 
-    /**
-     * Returns a valid token, refreshing it transparently when expired.
-     * Thread-safe.
-     */
+    /** Returns a valid token, refreshing it transparently when expired. Thread-safe. */
     public String getToken() {
-        if (isTokenValid()) {
-            return cachedToken;
-        }
+        if (isTokenValid()) return cachedToken;
         return refreshToken();
     }
 
-    /**
-     * Forces token refresh (called after a 401 from Shiprocket).
-     */
+    /** Forces token refresh — called after a 401 from Shiprocket. */
     public String forceRefresh() {
-        synchronized (this) {
-            cachedToken  = null;
-            tokenExpiry  = null;
+        lock.lock();
+        try {
+            cachedToken = null;
+            tokenExpiry = null;
+        } finally {
+            lock.unlock();
         }
         return refreshToken();
     }
 
-    /**
-     * Returns true when the cached token exists and has not expired.
-     */
     public boolean isTokenValid() {
         return cachedToken != null
                 && tokenExpiry != null
@@ -76,17 +68,12 @@ public class ShiprocketTokenManager {
     private String refreshToken() {
         lock.lock();
         try {
-            // Double-checked locking — another thread may have refreshed while we waited
-            if (isTokenValid()) {
-                return cachedToken;
-            }
+            if (isTokenValid()) return cachedToken;
 
             log.info("[Shiprocket] Authenticating with Shiprocket API...");
-
             String token = authenticate();
-            cachedToken  = token;
-            tokenExpiry  = Instant.now().plusSeconds(TOKEN_EXPIRY_SECONDS);
-
+            cachedToken = token;
+            tokenExpiry = Instant.now().plusSeconds(TOKEN_EXPIRY_SECONDS);
             log.info("[Shiprocket] Authentication successful. Token cached for {} hours.",
                     TOKEN_EXPIRY_SECONDS / 3600);
             return token;
@@ -99,12 +86,14 @@ public class ShiprocketTokenManager {
     private String authenticate() {
         if (props.getEmail() == null || props.getEmail().isBlank()
                 || props.getPassword() == null || props.getPassword().isBlank()) {
-            throw new ShiprocketException("Shiprocket credentials not configured. " +
+            throw new ShiprocketException(
+                    "Shiprocket credentials not configured. " +
                     "Set shiprocket.email and shiprocket.password in application properties.");
         }
 
         try {
-            ShiprocketAuthRequest authReq = new ShiprocketAuthRequest(props.getEmail(), props.getPassword());
+            ShiprocketAuthRequest authReq = new ShiprocketAuthRequest(
+                    props.getEmail(), props.getPassword());
             String body = objectMapper.writeValueAsString(authReq);
 
             HttpClient client = HttpClient.newBuilder()
@@ -123,7 +112,6 @@ public class ShiprocketTokenManager {
             if (response.statusCode() == 200) {
                 ShiprocketAuthResponse authResponse =
                         objectMapper.readValue(response.body(), ShiprocketAuthResponse.class);
-
                 if (authResponse.getToken() == null || authResponse.getToken().isBlank()) {
                     throw new ShiprocketException("Shiprocket authentication response missing token");
                 }
@@ -131,13 +119,15 @@ public class ShiprocketTokenManager {
             }
 
             log.error("[Shiprocket] Authentication failed with HTTP {}", response.statusCode());
-            throw new ShiprocketException("Shiprocket authentication failed with status " + response.statusCode());
+            throw new ShiprocketException(
+                    "Shiprocket authentication failed with status " + response.statusCode());
 
         } catch (ShiprocketException e) {
             throw e;
         } catch (Exception e) {
             log.error("[Shiprocket] Authentication error: {}", e.getMessage());
-            throw new ShiprocketException("Shiprocket authentication failed: " + e.getMessage(), e);
+            throw new ShiprocketException(
+                    "Shiprocket authentication failed: " + e.getMessage(), e);
         }
     }
 }

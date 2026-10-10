@@ -5,27 +5,23 @@ import com.brahmaniflower.shiprocket.dto.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
  * Low-level HTTP client for Shiprocket API.
  *
- * Uses Apache HttpClient 5 for improved TLS compatibility on networks where
- * Java's built-in HttpClient fails with SSL_ERROR_SYSCALL.
- *
  * Responsibilities:
- * - Build and send HTTP requests with the current auth token.
+ * - Build and send HTTP requests with the current token.
  * - Retry GET requests on transient 5xx errors (up to maxRetries).
- * - Retry once on 401 (token refresh via ShiprocketTokenManager).
+ * - Retry once on 401 (re-authenticates via ShiprocketTokenManager).
  * - postOnce() is used for shipment creation (no retry — prevents duplicate orders).
  * - NEVER log credentials or tokens.
  */
@@ -34,7 +30,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class ShiprocketClient {
 
-    private final ShiprocketProperties  props;
+    private final ShiprocketProperties   props;
     private final ShiprocketTokenManager tokenManager;
     private final ObjectMapper           objectMapper;
 
@@ -124,45 +120,35 @@ public class ShiprocketClient {
 
     private String getWithRetry(String url, String operation) {
         for (int attempt = 0; attempt <= props.getMaxRetries(); attempt++) {
-            try (CloseableHttpClient client = ShiprocketTokenManager.buildHttpClient()) {
+            try {
                 String token = tokenManager.getToken();
-                HttpGet get = new HttpGet(url);
-                get.setHeader("Authorization", "Bearer " + token);
-                get.setHeader("Content-Type", "application/json");
+                HttpRequest request = buildGet(url, token);
+                HttpResponse<String> response = newClient().send(request,
+                        HttpResponse.BodyHandlers.ofString());
 
-                int[]    statusHolder = {0};
-                String   body = client.execute(get, response -> {
-                    statusHolder[0] = response.getCode();
-                    return EntityUtils.toString(response.getEntity());
-                });
-                int status = statusHolder[0];
-
-                if (status == 401 && attempt == 0) {
-                    log.warn("[Shiprocket] 401 on {} attempt {}. Forcing token refresh.",
-                            operation, attempt + 1);
+                if (response.statusCode() == 401 && attempt == 0) {
+                    log.warn("[Shiprocket] 401 on {} attempt {}. Forcing token refresh.", operation, attempt + 1);
                     tokenManager.forceRefresh();
                     continue;
                 }
-                if (status >= 200 && status < 300) return body;
-                if (status >= 400 && status < 500) {
-                    log.error("[Shiprocket] Client error {} on {}: {}", status, operation, body);
-                    throw new ShiprocketException(
-                            "Shiprocket " + operation + " failed: HTTP " + status);
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    return response.body();
                 }
-                log.warn("[Shiprocket] Server error {} on {} attempt {}", status, operation, attempt + 1);
+                if (response.statusCode() >= 400 && response.statusCode() < 500) {
+                    log.error("[Shiprocket] Client error {} on {}: {}", response.statusCode(), operation, response.body());
+                    throw new ShiprocketException("Shiprocket " + operation + " failed: HTTP " + response.statusCode());
+                }
+                log.warn("[Shiprocket] Server error {} on {} attempt {}", response.statusCode(), operation, attempt + 1);
                 if (attempt == props.getMaxRetries()) {
-                    throw new ShiprocketException(
-                            "Shiprocket " + operation + " failed after retries: HTTP " + status);
+                    throw new ShiprocketException("Shiprocket " + operation + " failed after retries: HTTP " + response.statusCode());
                 }
 
             } catch (ShiprocketException e) {
                 throw e;
             } catch (Exception e) {
                 if (attempt == props.getMaxRetries()) {
-                    log.error("[Shiprocket] {} failed after {} attempts: {}",
-                            operation, attempt + 1, e.getMessage());
-                    throw new ShiprocketException(
-                            "Shiprocket " + operation + " failed: " + e.getMessage(), e);
+                    log.error("[Shiprocket] {} failed after {} attempts: {}", operation, attempt + 1, e.getMessage());
+                    throw new ShiprocketException("Shiprocket " + operation + " failed: " + e.getMessage(), e);
                 }
                 log.warn("[Shiprocket] {} attempt {} failed: {}", operation, attempt + 1, e.getMessage());
             }
@@ -179,38 +165,57 @@ public class ShiprocketClient {
      */
     private String postOnce(String url, String body, String operation) {
         for (int tokenAttempt = 0; tokenAttempt <= 1; tokenAttempt++) {
-            try (CloseableHttpClient client = ShiprocketTokenManager.buildHttpClient()) {
+            try {
                 String token = tokenManager.getToken();
-                HttpPost post = new HttpPost(url);
-                post.setHeader("Authorization", "Bearer " + token);
-                post.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+                HttpRequest request = buildPost(url, body, token);
+                HttpResponse<String> response = newClient().send(request,
+                        HttpResponse.BodyHandlers.ofString());
 
-                int[]  statusHolder = {0};
-                String responseBody = client.execute(post, response -> {
-                    statusHolder[0] = response.getCode();
-                    return EntityUtils.toString(response.getEntity());
-                });
-                int status = statusHolder[0];
-
-                if (status == 401 && tokenAttempt == 0) {
+                if (response.statusCode() == 401 && tokenAttempt == 0) {
                     log.warn("[Shiprocket] 401 on {}. Forcing token refresh and retrying once.", operation);
                     tokenManager.forceRefresh();
                     continue;
                 }
-                if (status >= 200 && status < 300) return responseBody;
-                log.error("[Shiprocket] {} failed with HTTP {}: {}", operation, status, responseBody);
-                throw new ShiprocketException(
-                        "Shiprocket " + operation + " failed: HTTP " + status);
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    return response.body();
+                }
+                log.error("[Shiprocket] {} failed with HTTP {}: {}", operation, response.statusCode(), response.body());
+                throw new ShiprocketException("Shiprocket " + operation + " failed: HTTP " + response.statusCode());
 
             } catch (ShiprocketException e) {
                 throw e;
             } catch (Exception e) {
                 log.error("[Shiprocket] {} failed: {}", operation, e.getMessage());
-                throw new ShiprocketException(
-                        "Shiprocket " + operation + " failed: " + e.getMessage(), e);
+                throw new ShiprocketException("Shiprocket " + operation + " failed: " + e.getMessage(), e);
             }
         }
         throw new ShiprocketException("Shiprocket " + operation + " failed after token refresh");
+    }
+
+    private HttpClient newClient() {
+        return HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(props.getConnectTimeoutMs()))
+                .build();
+    }
+
+    private HttpRequest buildGet(String url, String token) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofMillis(props.getReadTimeoutMs()))
+                .GET()
+                .build();
+    }
+
+    private HttpRequest buildPost(String url, String body, String token) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofMillis(props.getReadTimeoutMs()))
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
     }
 
     private String encode(String value) {
