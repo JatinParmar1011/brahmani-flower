@@ -1,11 +1,4 @@
-const TAG_COLORS = {
-  Bestseller: 'bg-orange-500',
-  Trending:   'bg-pink-500',
-  New:        'bg-blue-500',
-  Popular:    'bg-green-600',
-  Premium:    'bg-purple-600',
-  Luxury:     'bg-yellow-600',
-};
+import { tagBadgeClass } from '../../utils/tagColors';
 
 export default function ProductCard({ product, wishlist, toggleWishlist, onAddToCart, onProductClick }) {
   const { id, name, price, originalPrice, rating, reviewCount, tag, delivery, imageUrl } = product;
@@ -32,7 +25,7 @@ export default function ProductCard({ product, wishlist, toggleWishlist, onAddTo
         </div>
 
         {tag && (
-          <span className={`absolute top-3 left-3 text-[10px] font-bold text-white px-2.5 py-1 rounded-full ${TAG_COLORS[tag] || 'bg-gray-500'}`}>
+          <span className={`absolute top-3 left-3 text-[10px] font-bold text-white px-2.5 py-1 rounded-full ${tagBadgeClass(tag)}`}>
             {tag}
           </span>
         )}

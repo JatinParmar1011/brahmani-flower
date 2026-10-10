@@ -7,14 +7,7 @@ const STATUS_STYLE = {
   'Out of Stock':'bg-red-100 text-red-600',
 };
 
-const TAG_STYLE = {
-  Bestseller: 'bg-orange-100 text-orange-600',
-  Trending:   'bg-blue-100 text-blue-600',
-  New:        'bg-emerald-100 text-emerald-600',
-  Popular:    'bg-violet-100 text-violet-600',
-  Premium:    'bg-yellow-100 text-yellow-700',
-  Luxury:     'bg-rose-100 text-rose-600',
-};
+import { tagPillClass } from '../../utils/tagColors';
 
 const TX_TYPE_STYLE = {
   RESTOCK:     'bg-green-100 text-green-700',
@@ -232,7 +225,7 @@ export default function ProductDetailPanel({ product, onEdit, onManageStock, onB
             <div className="flex flex-wrap gap-2 mb-4">
               <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_STYLE[status]}`}>{status}</span>
               {product.tag && (
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${TAG_STYLE[product.tag] || 'bg-gray-100 text-gray-500'}`}>{product.tag}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${tagPillClass(product.tag)}`}>{product.tag}</span>
               )}
             </div>
             <InfoRow label="Selling Price"  value={`₹${product.price}`} />

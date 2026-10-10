@@ -9,6 +9,19 @@ CREATE TABLE IF NOT EXISTS category_type_mst (
     UNIQUE KEY uk_category_type_name (category_type_name)
 );
 
+INSERT INTO category_type_mst
+    (id, category_type_name, category_type_description, status)
+VALUES
+    (1, 'Navbar',            'Top navigation bar categories',                 'ACTIVE'),
+    (2, 'City Delivery',     'Products available for city-specific delivery', 'ACTIVE'),
+    (3, 'Best Selling',      'Best selling products section',                 'ACTIVE'),
+    (4, 'Shop by Occasion',  'Shop by occasion section',                      'ACTIVE'),
+    (5, 'Shop by Recipient', 'Shop by recipient section',                     'ACTIVE')
+ON DUPLICATE KEY UPDATE
+    category_type_name        = VALUES(category_type_name),
+    category_type_description = VALUES(category_type_description),
+    status                    = VALUES(status);
+
 CREATE TABLE IF NOT EXISTS category_detail (
     id                      BIGINT       NOT NULL AUTO_INCREMENT,
     category_type_id        BIGINT       NOT NULL,
@@ -23,13 +36,6 @@ CREATE TABLE IF NOT EXISTS category_detail (
     CONSTRAINT fk_category_detail_type FOREIGN KEY (category_type_id) REFERENCES category_type_mst(id)
 );
 
--- INSERT IGNORE INTO category_type_mst (id, category_type_name, category_type_description, status) VALUES
--- (1, 'navbar',             'Top navigation bar categories',  'ACTIVE'),
--- (2, 'only_in_surat',      'Products exclusive to Surat',    'ACTIVE'),
--- (3, 'best_selling',       'Best selling products section',  'ACTIVE'),
--- (4, 'shop_by_occasion',   'Shop by occasion section',       'ACTIVE'),
--- (5, 'shop_by_recipient',  'Shop by recipient section',      'ACTIVE');
---
 -- -- navbar categories
 -- INSERT IGNORE INTO category_detail (category_type_id, category_name, category_description, category_display_order, status) VALUES
 -- (1, 'Blooms',      'Fresh roses, lilies, orchids and seasonal blooms',        1,  'ACTIVE'),
@@ -111,6 +117,70 @@ CREATE TABLE IF NOT EXISTS product_detail (
     PRIMARY KEY (id),
     INDEX idx_pd_available (available)
 );
+
+-- -- ── 10 Products ──────────────────────────────────────────────────────────────
+-- INSERT INTO product_detail
+-- (name, description, contains, price, original_price, stock, rating, review_count, tag, image_url, delivery, highlight1, highlight2, highlight3, available)
+-- VALUES
+--     ('10 Red Roses Bouquet',
+--      'A classic bouquet of 10 fresh red roses, perfect for expressing love and romance.',
+--      '10 Fresh Red Roses, Green Foliage, Ribbon Wrap',
+--      695.00, 799.00, 50, 4.9, 1245, 'Bestseller', NULL, 'Tomorrow',
+--      'Hand-tied bouquet', 'Same-day delivery', '100% fresh flowers', TRUE),
+--
+--     ('Mixed Seasonal Bouquet',
+--      'A vibrant mix of seasonal flowers handpicked for freshness and colour.',
+--      '15 Mixed Flowers, Baby Breath, Decorative Wrap',
+--      549.00, 699.00, 40, 4.7, 632, 'Popular', NULL, 'Tomorrow',
+--      'Fresh seasonal blooms', 'Cheerful & vibrant', 'Eco-friendly packaging', TRUE),
+--
+--     ('White Lily Elegance',
+--      'Graceful white lilies arranged in an elegant bouquet for any occasion.',
+--      '6 White Lilies, Green Leaves, Satin Ribbon',
+--      849.00, 999.00, 30, 4.8, 418, 'Trending', NULL, 'Tomorrow',
+--      'Premium white lilies', 'Long-lasting fragrance', 'Gift-ready packaging', TRUE),
+--
+--     ('Sunflower Sunshine Bunch',
+--      'Bright and cheerful sunflowers to light up anyone\'s day.',
+--    '10 Sunflowers, Eucalyptus Leaves, Kraft Wrap',
+--    499.00, 649.00, 60, 4.8, 875, 'Popular', NULL, 'Tomorrow',
+--    'Fresh sunflowers', 'Mood-lifting gift', 'Same-day available', TRUE),
+--
+--   ('Pink Roses & Chocolates Combo',
+--    'A romantic combo of 6 pink roses paired with premium Belgian chocolates.',
+--    '6 Pink Roses, Belgian Chocolate Box 150g, Gift Bag',
+--    999.00, 1299.00, 25, 4.9, 523, 'Bestseller', NULL, 'Tomorrow',
+--    'Flowers + chocolates', 'Perfect anniversary gift', 'Beautifully wrapped', TRUE),
+--
+--   ('Purple Orchid Bouquet',
+--    'Exotic purple orchids elegantly arranged — a sophisticated gift choice.',
+--    '5 Purple Orchid Stems, Decorative Foliage, Ribbon',
+--    1199.00, 1499.00, 20, 4.9, 310, 'Premium', NULL, 'Tomorrow',
+--    'Exotic orchids', 'Long-lasting blooms', 'Premium presentation', TRUE),
+--
+--   ('Birthday Flower Basket',
+--    'A beautiful flower basket bursting with colourful blooms, ideal for birthdays.',
+--    'Mixed Flowers Basket, Ribbon, Happy Birthday Card',
+--    799.00, 999.00, 35, 4.7, 694, 'New', NULL, 'Tomorrow',
+--    'Basket arrangement', 'Includes birthday card', 'Bright & festive', TRUE),
+--
+--   ('Rose & Ferrero Rocher Gift Set',
+--    '12 fresh red roses paired with a Ferrero Rocher box — the ultimate gift.',
+--    '12 Red Roses, Ferrero Rocher 16-piece Box, Gift Wrap',
+--    1499.00, 1899.00, 15, 4.9, 287, 'Bestseller', NULL, 'Tomorrow',
+--    'Premium combo', 'Ferrero Rocher included', 'Luxury gift wrap', TRUE),
+--
+--   ('Silk Rose Artificial Bouquet',
+--    'Stunning silk roses that look real and last forever — zero maintenance.',
+--    '12 Silk Roses, Decorative Leaves, Vase-ready arrangement',
+--    599.00, 849.00, 100, 4.8, 412, 'Popular', NULL, '2–3 Days',
+--    'Lasts forever', 'No watering needed', 'Looks 100% real', TRUE),
+--
+--   ('Artificial Sunflower Bunch',
+--    'Vibrant artificial sunflowers for home décor — always in bloom.',
+--    '10 Artificial Sunflowers, Stem Wires, Decorative Wrap',
+--    399.00, 549.00, 80, 4.7, 231, 'Trending', NULL, '2–3 Days',
+--    'Permanent décor', 'Fade-resistant', 'Easy to arrange', TRUE);
 
 CREATE TABLE IF NOT EXISTS product_category_mapping (
     id                  BIGINT NOT NULL AUTO_INCREMENT,

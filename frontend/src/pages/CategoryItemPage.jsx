@@ -4,26 +4,20 @@ import ProductFilters from '../components/product/ProductFilters';
 import ProductGrid from '../components/product/ProductGrid';
 import ProductToast from '../components/product/ProductToast';
 
-const GRADIENT_MAP = {
-  'Shop By Occasion':  'from-orange-50 to-amber-100',
-  'Shop By Recipient': 'from-pink-50 to-rose-100',
-};
-
 const ACCENT_MAP = {
   'Shop By Occasion':  '#f97316',
   'Shop By Recipient': '#e91e8c',
 };
 
 export default function CategoryItemPage({ item, wishlist, toggleWishlist, onAddToCart, onBack, onProductClick }) {
-  const { label, emoji, parent } = item;
-  const gradient = GRADIENT_MAP[parent] || 'from-pink-50 to-rose-100';
-  const accent   = ACCENT_MAP[parent]   || '#1a6b8a';
+  const { label, parent, imageUrl } = item;
+  const accent = ACCENT_MAP[parent] || '#1a6b8a';
 
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [sort, setSort]         = useState('popular');
-  const [activeTag, setActiveTag] = useState('All');
-  const [toast, setToast]       = useState('');
+  const [products, setProducts]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [sort, setSort]             = useState('popular');
+  const [activeTag, setActiveTag]   = useState('All');
+  const [toast, setToast]           = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -61,27 +55,20 @@ export default function CategoryItemPage({ item, wishlist, toggleWishlist, onAdd
         <span className="text-gray-800 font-semibold">{label}</span>
       </div>
 
-      {/* Hero */}
-      <div className={`bg-gradient-to-r ${gradient} rounded-2xl px-10 py-10 flex items-center justify-between mb-8 overflow-hidden relative`}>
-        <div className="absolute right-0 top-0 w-72 h-72 rounded-full opacity-10" style={{ background: accent, transform: 'translate(30%,-30%)' }} />
-        <div className="z-10">
-          <span className="text-xs font-semibold px-3 py-1 rounded-full text-white" style={{ background: accent }}>
-            {parent}
-          </span>
-          <h1 className="text-3xl font-extrabold text-gray-900 mt-3">{label}</h1>
-          <p className="text-gray-500 mt-2 text-sm max-w-md">
-            Handpicked flowers &amp; gifts perfect for <span className="font-semibold text-gray-700">{label}</span> — delivered fresh to your door.
-          </p>
-          <div className="flex items-center gap-6 mt-5">
-            {[['🚚', 'Same Day Delivery'], ['✅', '100% Fresh'], ['↩️', 'Easy Returns']].map(([icon, lbl]) => (
-              <div key={lbl} className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-                <span>{icon}</span><span>{lbl}</span>
-              </div>
-            ))}
-          </div>
+      {/* Hero — image only, same pattern as PromoBanner / CityDelivery */}
+      {imageUrl ? (
+        <div className="rounded-2xl overflow-hidden shadow-sm mb-8" style={{ height: '220px' }}>
+          <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
         </div>
-        <span className="text-[120px] leading-none drop-shadow-lg z-10 select-none hidden sm:block">{emoji}</span>
-      </div>
+      ) : (
+        <div
+          className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center text-gray-400 mb-8"
+          style={{ height: '220px' }}
+        >
+          <div className="text-4xl mb-2">🖼️</div>
+          <p className="text-sm font-medium">No image found</p>
+        </div>
+      )}
 
       {/* Filters */}
       <ProductFilters

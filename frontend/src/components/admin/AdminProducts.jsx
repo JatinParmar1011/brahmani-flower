@@ -9,14 +9,7 @@ const STATUS_STYLE = {
   'Low Stock': 'bg-amber-100 text-amber-700',
   'Out of Stock': 'bg-red-100 text-red-600',
 };
-const TAG_STYLE = {
-  Bestseller: 'bg-orange-100 text-orange-600',
-  Trending: 'bg-blue-100 text-blue-600',
-  New: 'bg-emerald-100 text-emerald-600',
-  Popular: 'bg-violet-100 text-violet-600',
-  Premium: 'bg-yellow-100 text-yellow-700',
-  Luxury: 'bg-rose-100 text-rose-600',
-};
+import { tagPillClass } from '../../utils/tagColors';
 
 const getStatus = (stock) =>
   stock === 0 ? 'Out of Stock' : stock <= 10 ? 'Low Stock' : 'Active';
@@ -311,7 +304,7 @@ export default function AdminProducts() {
                       <td className="px-5 py-3.5 text-gray-600 font-medium">{p.stock}</td>
                       <td className="px-5 py-3.5">
                         {p.tag
-                          ? <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${TAG_STYLE[p.tag] || 'bg-gray-100 text-gray-500'}`}>{p.tag}</span>
+                          ? <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${tagPillClass(p.tag)}`}>{p.tag}</span>
                           : <span className="text-gray-300 text-xs">—</span>}
                       </td>
                       <td className="px-5 py-3.5">

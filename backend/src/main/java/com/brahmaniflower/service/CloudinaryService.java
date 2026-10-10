@@ -53,6 +53,24 @@ public class CloudinaryService {
         }
     }
 
+    // Upload single image to Cloudinary under "brahmani-flower/categories" folder
+    public String uploadCategoryImage(MultipartFile file) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "brahmani-flower/categories",
+                            "resource_type", "image",
+                            "quality", "auto",
+                            "fetch_format", "auto"
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Image upload failed: " + e.getMessage());
+        }
+    }
+
     // Upload single image to Cloudinary under "brahmani-flower/homepage" folder
     public String uploadHomepageImage(MultipartFile file) {
         try {

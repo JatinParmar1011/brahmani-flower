@@ -53,4 +53,11 @@ public class CategoryDetail {
     public String getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public void setCategoryType(CategoryTypeMst categoryType) { this.categoryType = categoryType; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+    public void setCategoryDescription(String categoryDescription) { this.categoryDescription = categoryDescription; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public void setCategoryDisplayOrder(Integer categoryDisplayOrder) { this.categoryDisplayOrder = categoryDisplayOrder; }
+    public void setStatus(String status) { this.status = status; }
 }

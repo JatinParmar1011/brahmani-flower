@@ -3,6 +3,7 @@ const NAV = [
   { key: 'orders',    icon: '📦', label: 'Orders' },
   { key: 'products',  icon: '🌸', label: 'Products' },
   { key: 'customers', icon: '👥', label: 'Customers' },
+  { key: 'categories',icon: '🗂️', label: 'Categories' },
   { key: 'gallery',   icon: '🖼️', label: 'Gallery' },
   { key: 'homepage',  icon: '🏠', label: 'Homepage Media' },
   { key: 'profile',   icon: '👤', label: 'My Profile' },

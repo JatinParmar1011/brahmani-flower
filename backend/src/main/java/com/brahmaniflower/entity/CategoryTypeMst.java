@@ -47,4 +47,8 @@ public class CategoryTypeMst {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public List<CategoryDetail> getCategories() { return categories; }
+
+    public void setCategoryTypeName(String categoryTypeName) { this.categoryTypeName = categoryTypeName; }
+    public void setCategoryTypeDescription(String categoryTypeDescription) { this.categoryTypeDescription = categoryTypeDescription; }
+    public void setStatus(String status) { this.status = status; }
 }

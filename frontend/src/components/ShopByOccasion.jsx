@@ -17,7 +17,13 @@ export default function ShopByOccasion({ onItemClick }) {
 
   useEffect(() => {
     fetchCategories('shop_by_occasion')
-      .then(data => setOccasions(data.map(c => ({ label: c.categoryName, emoji: EMOJI_MAP[c.categoryName] || '🌸', bg: BG_MAP[c.categoryName] || '#fce4ec' }))))
+      .then(data => setOccasions(data.map(c => ({
+        label:       c.categoryName,
+        emoji:       EMOJI_MAP[c.categoryName] || '🌸',
+        bg:          BG_MAP[c.categoryName]    || '#fce4ec',
+        imageUrl:    c.imageUrl || null,
+        description: c.categoryDescription || null,
+      }))))
       .catch(() => {});
   }, []);
 
@@ -32,10 +38,10 @@ export default function ShopByOccasion({ onItemClick }) {
         {occasions.map(o => (
           <div
             key={o.label}
-            onClick={() => onItemClick?.({ label: o.label, emoji: o.emoji, bg: o.bg, parent: 'Shop By Occasion' })}
+            onClick={() => onItemClick?.({ label: o.label, emoji: o.emoji, bg: o.bg, imageUrl: o.imageUrl, description: o.description, parent: 'Shop By Occasion' })}
             className="flex flex-col items-center gap-3 cursor-pointer flex-shrink-0 hover:-translate-y-1 transition-transform group"
           >
-            <div className="w-32 h-32 rounded-3xl flex items-center justify-center shadow-md group-hover:shadow-xl transition-shadow" style={{ background: o.bg }}>
+            <div className="w-32 h-32 rounded-3xl overflow-hidden shadow-md group-hover:shadow-xl transition-shadow bg-gray-100 flex items-center justify-center" style={{ background: o.bg }}>
               <span className="text-6xl group-hover:scale-110 transition-transform duration-300">{o.emoji}</span>
             </div>
             <p className="text-sm font-medium text-gray-700 text-center">{o.label}</p>

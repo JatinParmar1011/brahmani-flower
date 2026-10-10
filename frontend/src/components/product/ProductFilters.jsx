@@ -1,3 +1,5 @@
+import { TAG_HEX } from '../../utils/tagColors';
+
 const SORT_OPTIONS = [
   { value: 'popular',   label: 'Most Popular' },
   { value: 'price_asc', label: 'Price: Low to High' },
@@ -13,20 +15,25 @@ export default function ProductFilters({ sort, setSort, activeTag, setActiveTag,
     <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
       {/* Tag pills */}
       <div className="flex items-center gap-2 flex-wrap">
-        {TAGS.map(tag => (
-          <button
-            key={tag}
-            onClick={() => setActiveTag(tag)}
-            className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
-              activeTag === tag
-                ? 'text-white border-transparent shadow-sm'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-            }`}
-            style={activeTag === tag ? { background: accent, borderColor: accent } : {}}
-          >
-            {tag}
-          </button>
-        ))}
+        {TAGS.map(tag => {
+          const isActive = activeTag === tag;
+          // "All" uses the page accent; each tag uses its own colour
+          const activeColor = tag === 'All' ? accent : (TAG_HEX[tag] || accent);
+          return (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(tag)}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
+                isActive
+                  ? 'text-white border-transparent shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+              }`}
+              style={isActive ? { background: activeColor, borderColor: activeColor } : {}}
+            >
+              {tag}
+            </button>
+          );
+        })}
       </div>
 
       {/* Right: count + sort */}

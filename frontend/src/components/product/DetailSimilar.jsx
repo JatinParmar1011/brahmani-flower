@@ -1,11 +1,4 @@
-const TAG_COLORS = {
-  Bestseller: 'bg-orange-500',
-  Trending:   'bg-pink-500',
-  New:        'bg-blue-500',
-  Popular:    'bg-green-600',
-  Premium:    'bg-purple-600',
-  Luxury:     'bg-yellow-600',
-};
+import { tagBadgeClass } from '../../utils/tagColors';
 
 export default function DetailSimilar({ products, onSelect, onAddToCart }) {
   if (!products.length) return null;
@@ -22,7 +15,7 @@ export default function DetailSimilar({ products, onSelect, onAddToCart }) {
             <div className="relative h-32 flex items-center justify-center" style={{ background: p.bg }}>
               <span className="text-5xl group-hover:scale-110 transition-transform duration-300">{p.emoji}</span>
               {p.tag && (
-                <span className={`absolute top-2 left-2 text-[9px] font-bold text-white px-2 py-0.5 rounded-full ${TAG_COLORS[p.tag] || 'bg-gray-500'}`}>
+                <span className={`absolute top-2 left-2 text-[9px] font-bold text-white px-2 py-0.5 rounded-full ${tagBadgeClass(p.tag)}`}>
                   {p.tag}
                 </span>
               )}

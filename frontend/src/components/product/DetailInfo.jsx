@@ -1,9 +1,5 @@
 import { useState } from 'react';
-
-const TAG_COLORS = {
-  Bestseller: 'bg-amber-500',  Trending: 'bg-rose-500',   New: 'bg-blue-500',
-  Popular:    'bg-emerald-600', Premium: 'bg-violet-600', Luxury: 'bg-yellow-600',
-};
+import { tagBadgeClass } from '../../utils/tagColors';
 
 export default function DetailInfo({ product, onAddToCart, inWishlist, onToggleWishlist }) {
   const { name, price, originalPrice, rating, reviewCount, tag,
@@ -20,7 +16,7 @@ export default function DetailInfo({ product, onAddToCart, inWishlist, onToggleW
       {/* ── Tag + Wishlist ── */}
       <div className="flex items-center justify-between mb-3">
         {tag
-          ? <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-white px-3 py-1 rounded-full ${TAG_COLORS[tag] || 'bg-gray-500'}`}>
+          ? <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-white px-3 py-1 rounded-full ${tagBadgeClass(tag)}`}>
               {tag}
             </span>
           : <span />

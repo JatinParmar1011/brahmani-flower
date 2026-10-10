@@ -22,7 +22,13 @@ export default function ShopByRecipient({ onItemClick }) {
 
   useEffect(() => {
     fetchCategories('shop_by_recipient')
-      .then(data => setRecipients(data.map(c => ({ label: c.categoryName, emoji: EMOJI_MAP[c.categoryName] || '🌸', bg: BG_MAP[c.categoryName] || '#fce4ec' }))))
+      .then(data => setRecipients(data.map(c => ({
+        label:       c.categoryName,
+        emoji:       EMOJI_MAP[c.categoryName] || '🌸',
+        bg:          BG_MAP[c.categoryName]    || '#fce4ec',
+        imageUrl:    c.imageUrl || null,
+        description: c.categoryDescription || null,
+      }))))
       .catch(() => {});
   }, []);
 
@@ -40,7 +46,7 @@ export default function ShopByRecipient({ onItemClick }) {
         {recipients.map(r => (
           <div
             key={r.label}
-            onClick={() => onItemClick?.({ label: r.label, emoji: r.emoji, bg: r.bg, parent: 'Shop By Recipient' })}
+            onClick={() => onItemClick?.({ label: r.label, emoji: r.emoji, bg: r.bg, imageUrl: r.imageUrl, description: r.description, parent: 'Shop By Recipient' })}
             className="group rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all bg-white border border-gray-100"
           >
             <div className="h-44 flex items-center justify-center" style={{ background: r.bg }}>
