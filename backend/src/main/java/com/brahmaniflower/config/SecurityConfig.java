@@ -46,6 +46,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gallery/**").permitAll()
                         // Public homepage media — GET only
                         .requestMatchers(HttpMethod.GET, "/api/homepage-media").permitAll()
+                        // Public: product delivery serviceability check (product detail page)
+                        .requestMatchers(HttpMethod.POST, "/api/delivery/serviceability/check").permitAll()
+                        // Shiprocket webhook — public but validated via secret header
+                        .requestMatchers(HttpMethod.POST, "/api/webhooks/shiprocket").permitAll()
                         // Guest cart — public, identified by session cookie
                         .requestMatchers(HttpMethod.GET,    "/api/guest-cart").permitAll()
                         .requestMatchers(HttpMethod.POST,   "/api/guest-cart/add").permitAll()

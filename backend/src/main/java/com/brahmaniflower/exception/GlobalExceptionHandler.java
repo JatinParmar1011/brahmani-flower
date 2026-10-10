@@ -1,6 +1,7 @@
 package com.brahmaniflower.exception;
 
 import com.brahmaniflower.dto.response.ApiResponse;
+import com.brahmaniflower.shiprocket.ShiprocketException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -81,5 +82,16 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error: ", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred"));
+    }
+
+    /**
+     * Shiprocket provider errors — returns 503 Service Unavailable.
+     * Informs frontend that delivery check is temporarily unavailable.
+     */
+    @ExceptionHandler(ShiprocketException.class)
+    public ResponseEntity<ApiResponse<Void>> handleShiprocketException(ShiprocketException ex) {
+        log.warn("[Shiprocket] Provider error surfaced to handler: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error("Delivery service temporarily unavailable. Please try again later."));
     }
 }

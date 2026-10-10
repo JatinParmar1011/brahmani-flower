@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import AddressForm, { EMPTY_FORM } from '../components/AddressForm';
 import { getProfile, updateProfile, getAddresses, createAddress, updateAddress, setDefaultAddr, deleteAddress } from '../services/authService';
 import { fetchMyOrders } from '../services/orderService';
+import { fetchOrderShipment, fetchOrderTracking } from '../services/deliveryService';
 import { INDIA_STATES, getCitiesForState } from '../data/indiaCities';
 import CustomDropdown from '../components/CustomDropdown';
 
@@ -506,21 +507,29 @@ const STATUS_STEP = {
 };
 
 function TrackOrderPanel() {
-  const [orderNum, setOrderNum] = useState('');
-  const [tracked, setTracked]   = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [orderNum,  setOrderNum]  = useState('');
+  const [tracked,   setTracked]   = useState(null);
+  const [shipment,  setShipment]  = useState(null);
+  const [tracking,  setTracking]  = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState('');
+  const [showEvents, setShowEvents] = useState(false);
 
   const handleTrack = async () => {
     if (!orderNum.trim()) return;
-    setLoading(true); setError(''); setTracked(null);
+    setLoading(true); setError(''); setTracked(null); setShipment(null); setTracking(null); setShowEvents(false);
     try {
+      // Find the order first
       const data = await fetchMyOrders(0, 50);
       const found = (data.content ?? []).find(
         o => o.orderNumber === orderNum.trim() || String(o.id) === orderNum.trim()
       );
-      if (!found) { setError('Order not found. Please check the order number.'); return; }
+      if (!found) { setError('Order not found. Please check the order number.'); setLoading(false); return; }
       setTracked(found);
+
+      // Load shipment + tracking in parallel (use static imports from top)
+      fetchOrderShipment(found.id).then(setShipment).catch(() => {});
+      fetchOrderTracking(found.id).then(setTracking).catch(() => {});
     } catch {
       setError('Failed to fetch order. Please try again.');
     } finally {
@@ -551,17 +560,48 @@ function TrackOrderPanel() {
       {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
 
       {tracked && (
-        <div className="bg-gradient-to-br from-[#1a6b8a]/5 to-blue-50 rounded-2xl p-6 border border-[#1a6b8a]/10">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-gradient-to-br from-[#1a6b8a]/5 to-blue-50 rounded-2xl p-6 border border-[#1a6b8a]/10 space-y-5">
+          {/* Order summary */}
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Order Number</p>
               <p className="font-bold text-gray-900">{tracked.orderNumber}</p>
             </div>
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-              statusStyle[tracked.status] || 'bg-gray-100 text-gray-600'
-            }`}>{tracked.status?.replaceAll('_', ' ')}</span>
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyle[tracked.status] || 'bg-gray-100 text-gray-600'}`}>
+              {tracked.status?.replaceAll('_', ' ')}
+            </span>
           </div>
 
+          {/* AWB / courier info */}
+          {shipment?.awbCode && (
+            <div className="bg-white rounded-xl px-4 py-3 border border-gray-100 shadow-sm space-y-1">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Shipment Details</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">AWB / Tracking No.</span>
+                <span className="text-xs font-bold text-gray-800">{shipment.awbCode}</span>
+              </div>
+              {shipment.courierName && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Courier</span>
+                  <span className="text-xs font-semibold text-gray-700">{shipment.courierName}</span>
+                </div>
+              )}
+              {shipment.shipmentStatusLabel && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Shipment Status</span>
+                  <span className="text-xs font-semibold text-[#1a6b8a]">{shipment.shipmentStatusLabel}</span>
+                </div>
+              )}
+              {shipment.estimatedDeliveryDate && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Est. Delivery</span>
+                  <span className="text-xs font-semibold text-gray-700">{shipment.estimatedDeliveryDate}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Order progress */}
           {cancelled ? (
             <div className="text-center py-4 text-red-500">
               <div className="text-4xl mb-2">❌</div>
@@ -584,6 +624,29 @@ function TrackOrderPanel() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Live tracking events */}
+          {tracking?.found && tracking?.events?.length > 0 && (
+            <div>
+              <button onClick={() => setShowEvents(v => !v)}
+                className="w-full text-xs font-semibold text-[#1a6b8a] border border-[#1a6b8a]/30 rounded-xl py-2 hover:bg-[#1a6b8a]/5 transition-colors">
+                {showEvents ? 'Hide Tracking Events ↑' : '📍 Show Live Tracking Events ↓'}
+              </button>
+              {showEvents && (
+                <div className="mt-3 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  {tracking.events.slice().reverse().slice(0, 10).map((ev, i) => (
+                    <div key={i} className="flex gap-3 px-4 py-3 border-b border-gray-50 last:border-0">
+                      <span className="text-[11px] text-gray-400 whitespace-nowrap mt-0.5 flex-shrink-0">{ev.date}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700">{ev.activity}</p>
+                        {ev.location && <p className="text-[11px] text-gray-400 mt-0.5">📍 {ev.location}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

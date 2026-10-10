@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchAdminOrderDetail, updateOrderStatusApi } from '../../services/orderService';
+import { fetchAdminOrderShipment, fetchAdminOrderTracking } from '../../services/deliveryService';
 
 const STATUS_STYLE = {
   CONFIRMED:        'bg-blue-100 text-blue-700',
@@ -54,6 +55,9 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
   const [error,    setError]    = useState('');
   const [reason,   setReason]   = useState('');
   const [toast,    setToast]    = useState(null);
+  const [shipment, setShipment] = useState(null);
+  const [tracking, setTracking] = useState(null);
+  const [shipTab,  setShipTab]  = useState(false); // toggle tracking panel
 
   useEffect(() => {
     setLoading(true);
@@ -61,11 +65,24 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
       .then(setOrder)
       .catch(() => setError('Failed to load order details'))
       .finally(() => setLoading(false));
+    // Load shipment info in background
+    fetchAdminOrderShipment(orderId)
+      .then(setShipment)
+      .catch(() => {}); // Shipment may not exist yet
   }, [orderId]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const loadTracking = async () => {
+    if (tracking) { setShipTab(v => !v); return; }
+    try {
+      const t = await fetchAdminOrderTracking(orderId);
+      setTracking(t);
+      setShipTab(true);
+    } catch { setShipTab(v => !v); }
   };
 
   const handleStatus = async (newStatus) => {
@@ -308,6 +325,50 @@ export default function OrderDetailPanel({ orderId, onBack, onStatusChanged }) {
               </div>
             ) : (
               <p className="text-xs text-gray-400">No address on record</p>
+            )}
+          </div>
+
+          {/* Shipment Info */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-[#1a6b8a]/10 flex items-center justify-center text-sm">📦</span>
+              Shipment
+            </h3>
+            {shipment && shipment.awbCode ? (
+              <div className="space-y-1.5">
+                <InfoRow label="AWB / Tracking" value={shipment.awbCode} />
+                <InfoRow label="Courier" value={shipment.courierName} />
+                <InfoRow label="Shipment Status" value={shipment.shipmentStatusLabel} />
+                {shipment.estimatedDeliveryDate && (
+                  <InfoRow label="Est. Delivery" value={shipment.estimatedDeliveryDate} />
+                )}
+                {shipment.shippingCharge != null && (
+                  <InfoRow label="Shipping Charge" value={`₹${shipment.shippingCharge}`} />
+                )}
+                <InfoRow label="Last Synced" value={shipment.lastSyncedAt ? new Date(shipment.lastSyncedAt).toLocaleString('en-IN') : '—'} />
+                <button onClick={loadTracking}
+                  className="mt-3 w-full text-xs font-semibold text-[#1a6b8a] border border-[#1a6b8a] rounded-lg py-2 hover:bg-[#1a6b8a] hover:text-white transition-colors">
+                  {shipTab ? 'Hide Tracking ↑' : '🔍 View Live Tracking ↓'}
+                </button>
+                {shipTab && tracking && (
+                  <div className="mt-3 bg-gray-50 rounded-xl p-3 space-y-2 max-h-48 overflow-y-auto">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Tracking Events</p>
+                    {tracking.events?.length > 0 ? tracking.events.slice().reverse().map((ev, i) => (
+                      <div key={i} className="flex gap-2 text-xs border-b border-gray-100 pb-1 last:border-0">
+                        <span className="text-gray-400 whitespace-nowrap flex-shrink-0">{ev.date}</span>
+                        <span className="text-gray-700">{ev.activity}</span>
+                        {ev.location && <span className="text-gray-400 ml-auto flex-shrink-0">{ev.location}</span>}
+                      </div>
+                    )) : (
+                      <p className="text-xs text-gray-400">No tracking events available yet.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">
+                {shipment ? 'Shipment created. Awaiting Shiprocket assignment.' : 'Shipment not yet created.'}
+              </p>
             )}
           </div>
 

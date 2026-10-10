@@ -230,6 +230,22 @@ CREATE TABLE IF NOT EXISTS orders (
     address_id          BIGINT,
     status              VARCHAR(30)     NOT NULL DEFAULT 'CONFIRMED',
     total_amount        DECIMAL(10,2)   NOT NULL,
+    shipping_charge     DECIMAL(10,2)   NOT NULL DEFAULT 0.00,
+    -- Shipment dimensions snapshotted from product configs at order creation.
+    -- Used when submitting the shipment to Shiprocket.
+    shipment_weight_kg  DECIMAL(7,3)    NOT NULL DEFAULT 0.500,
+    shipment_length_cm  DECIMAL(6,1)    NOT NULL DEFAULT 10.0,
+    shipment_breadth_cm DECIMAL(6,1)    NOT NULL DEFAULT 10.0,
+    shipment_height_cm  DECIMAL(6,1)    NOT NULL DEFAULT 10.0,
+    -- Address snapshot (preserved even if address record is modified/deleted)
+    snap_full_name      VARCHAR(150),
+    snap_mobile         VARCHAR(15),
+    snap_address1       VARCHAR(255),
+    snap_address2       VARCHAR(255),
+    snap_city           VARCHAR(100),
+    snap_state          VARCHAR(100),
+    snap_pincode        VARCHAR(10),
+    snap_country        VARCHAR(100),
     created_at          DATETIME        DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -351,4 +367,120 @@ CREATE TABLE IF NOT EXISTS inventory_transactions (
     INDEX idx_it_product (product_id),
     INDEX idx_it_type    (transaction_type),
     INDEX idx_it_created (created_at)
+);
+
+-- ============================================================
+-- DELIVERY: CITY MASTER
+-- ============================================================
+CREATE TABLE IF NOT EXISTS city (
+    id           BIGINT        NOT NULL AUTO_INCREMENT,
+    city_name    VARCHAR(100)  NOT NULL,
+    state        VARCHAR(100)  NOT NULL,
+    country      VARCHAR(100)  NOT NULL DEFAULT 'India',
+    status       VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE',
+    created_at   DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    created_by   VARCHAR(255),
+    updated_at   DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by   VARCHAR(255),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_city_state_country (city_name, state, country),
+    INDEX idx_city_status (status),
+    INDEX idx_city_name   (city_name)
+);
+
+-- ============================================================
+-- DELIVERY: PRODUCT DELIVERY CONFIGURATION
+-- Per-product delivery type and global settings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_delivery_config (
+    id              BIGINT       NOT NULL AUTO_INCREMENT,
+    product_id      BIGINT       NOT NULL,
+    delivery_type   VARCHAR(30)  NOT NULL DEFAULT 'PINCODE_BASED',
+    enabled         BOOLEAN      NOT NULL DEFAULT TRUE,
+    -- Per-unit weight and dimensions used for Shiprocket rate/serviceability checks.
+    -- Admin must set these to actual product values. Defaults are 0.5 kg / 10×10×10 cm.
+    weight_kg       DECIMAL(7,3) NOT NULL DEFAULT 0.500,
+    length_cm       DECIMAL(6,1) NOT NULL DEFAULT 10.0,
+    breadth_cm      DECIMAL(6,1) NOT NULL DEFAULT 10.0,
+    height_cm       DECIMAL(6,1) NOT NULL DEFAULT 10.0,
+    created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    created_by      VARCHAR(255),
+    updated_at      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by      VARCHAR(255),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_pdc_product (product_id),
+    CONSTRAINT fk_pdc_product FOREIGN KEY (product_id) REFERENCES product_detail(id),
+    INDEX idx_pdc_delivery_type (delivery_type),
+    INDEX idx_pdc_enabled       (enabled)
+);
+
+-- ============================================================
+-- DELIVERY: PRODUCT → CITY MAPPING (for CITY_BASED products)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_delivery_city (
+    id          BIGINT      NOT NULL AUTO_INCREMENT,
+    product_id  BIGINT      NOT NULL,
+    city_id     BIGINT      NOT NULL,
+    status      VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at  DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    created_by  VARCHAR(255),
+    updated_at  DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by  VARCHAR(255),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_pdc_product_city (product_id, city_id),
+    CONSTRAINT fk_pdcy_product FOREIGN KEY (product_id) REFERENCES product_detail(id),
+    CONSTRAINT fk_pdcy_city    FOREIGN KEY (city_id)    REFERENCES city(id),
+    INDEX idx_pdcy_product (product_id),
+    INDEX idx_pdcy_city    (city_id),
+    INDEX idx_pdcy_status  (status)
+);
+
+-- ============================================================
+-- SHIPMENT  (one per order, tracks Shiprocket shipment)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS shipment (
+    id                      BIGINT        NOT NULL AUTO_INCREMENT,
+    order_id                BIGINT        NOT NULL,
+    shiprocket_order_id     VARCHAR(100),
+    shiprocket_shipment_id  VARCHAR(100),
+    awb_code                VARCHAR(100),
+    courier_name            VARCHAR(200),
+    shipment_status         VARCHAR(50)   NOT NULL DEFAULT 'CREATED',
+    pickup_scheduled_date   DATE,
+    estimated_delivery_date DATE,
+    shipping_charge         DECIMAL(10,2),
+    last_synced_at          DATETIME,
+    sync_attempts           INT           NOT NULL DEFAULT 0,
+    creation_attempts       INT           NOT NULL DEFAULT 0,
+    error_message           VARCHAR(1000),
+    created_at              DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_shipment_order      (order_id),
+    UNIQUE KEY uk_shiprocket_order_id (shiprocket_order_id),
+    CONSTRAINT fk_shipment_order FOREIGN KEY (order_id) REFERENCES orders(id),
+    INDEX idx_shipment_status          (shipment_status),
+    INDEX idx_shipment_awb             (awb_code),
+    INDEX idx_shipment_shiprocket_id   (shiprocket_shipment_id),
+    INDEX idx_shipment_last_synced     (last_synced_at)
+);
+
+-- ============================================================
+-- SHIPMENT STATUS HISTORY  (audit log for every status change)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS shipment_status_history (
+    id               BIGINT        NOT NULL AUTO_INCREMENT,
+    shipment_id      BIGINT        NOT NULL,
+    old_status       VARCHAR(50),
+    new_status       VARCHAR(50)   NOT NULL,
+    provider_status  VARCHAR(200),
+    source           VARCHAR(50)   NOT NULL DEFAULT 'SYSTEM',
+    event_time       DATETIME,
+    received_at      DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    remarks          VARCHAR(1000),
+    PRIMARY KEY (id),
+    CONSTRAINT fk_ssh_shipment FOREIGN KEY (shipment_id) REFERENCES shipment(id) ON DELETE CASCADE,
+    INDEX idx_ssh_shipment  (shipment_id),
+    INDEX idx_ssh_new_status (new_status),
+    INDEX idx_ssh_received  (received_at)
 );

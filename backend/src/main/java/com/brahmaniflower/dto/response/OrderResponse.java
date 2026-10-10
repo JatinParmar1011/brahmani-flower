@@ -12,6 +12,7 @@ public class OrderResponse {
     private String userName;
     private List<OrderItemResponse> items;
     private BigDecimal totalAmount;
+    private BigDecimal shippingCharge;
     private String status;
     private LocalDateTime createdAt;
     private AddressInfo address;
@@ -37,6 +38,9 @@ public class OrderResponse {
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal v) { this.totalAmount = v; }
 
+    public BigDecimal getShippingCharge() { return shippingCharge; }
+    public void setShippingCharge(BigDecimal v) { this.shippingCharge = v; }
+
     public String getStatus() { return status; }
     public void setStatus(String v) { this.status = v; }
 
@@ -60,6 +64,7 @@ public class OrderResponse {
         public Builder userName(String v)                      { o.userName = v; return this; }
         public Builder items(List<OrderItemResponse> v)        { o.items = v; return this; }
         public Builder totalAmount(BigDecimal v)               { o.totalAmount = v; return this; }
+        public Builder shippingCharge(BigDecimal v)            { o.shippingCharge = v; return this; }
         public Builder status(String v)                        { o.status = v; return this; }
         public Builder createdAt(LocalDateTime v)              { o.createdAt = v; return this; }
         public Builder address(AddressInfo v)                  { o.address = v; return this; }

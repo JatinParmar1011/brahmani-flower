@@ -7,7 +7,9 @@ import com.brahmaniflower.entity.*;
 import com.brahmaniflower.exception.BadRequestException;
 import com.brahmaniflower.exception.ResourceNotFoundException;
 import com.brahmaniflower.repository.*;
+import com.brahmaniflower.service.DeliveryServiceabilityService;
 import com.brahmaniflower.service.OrderService;
+import com.brahmaniflower.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,16 +28,19 @@ import java.util.List;
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 
-    private final OrderRepository orderRepository;
-    private final OrderStatusHistoryRepository statusHistoryRepository;
+    private final OrderRepository                orderRepository;
+    private final OrderStatusHistoryRepository   statusHistoryRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
-    private final UserRepository userRepository;
-    private final UserAddressRepository addressRepository;
-    private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
-    private final ProductDetailRepository productRepository;
+    private final UserRepository                 userRepository;
+    private final UserAddressRepository          addressRepository;
+    private final CartRepository                 cartRepository;
+    private final CartItemRepository             cartItemRepository;
+    private final ProductDetailRepository        productRepository;
+    private final ProductDeliveryConfigRepository deliveryConfigRepository;
+    private final DeliveryServiceabilityService  serviceabilityService;
+    private final ShipmentService                shipmentService;
 
-    // ── Checkout from cart ────────────────────────────────────────────────
+    // ── Checkout from cart ────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -64,18 +69,31 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("Your cart is empty");
         }
 
-        // 5. Build order
+        // 5. Serviceability validation (re-run at checkout — stale results not trusted)
+        serviceabilityService.validateCheckoutServiceability(userIdentifier, request.getAddressId());
+
+        // 6. Build order
         Order order = new Order();
         order.setUser(user);
         order.setAddress(address);
         order.setOrderNumber(generateOrderNumber());
         order.setIdempotencyKey(request.getIdempotencyKey());
         order.setStatus(Order.OrderStatus.CONFIRMED);
+        order.setShippingCharge(BigDecimal.ZERO); // updated by ShipmentService after creation
+
+        // Snapshot delivery address (preserved even if address record is later modified)
+        snapshotAddress(order, address);
 
         BigDecimal total = BigDecimal.ZERO;
         List<InventoryTransaction> pendingTxs = new ArrayList<>();
 
-        // 6. Validate each cart item, lock product, deduct stock atomically
+        // Accumulate total shipment weight and take max dimensions across all items
+        BigDecimal totalWeightKg  = BigDecimal.ZERO;
+        BigDecimal maxLengthCm    = new BigDecimal("10.0");
+        BigDecimal maxBreadthCm   = new BigDecimal("10.0");
+        BigDecimal maxHeightCm    = new BigDecimal("10.0");
+
+        // 7. Validate each cart item, lock product, deduct stock atomically
         for (CartItem cartItem : cart.getItems()) {
             ProductDetail product = productRepository.findByIdForUpdate(cartItem.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product", cartItem.getProduct().getId()));
@@ -89,6 +107,18 @@ public class OrderServiceImpl implements OrderService {
                 throw new BadRequestException("Insufficient stock for \"" + product.getName()
                         + "\". Available: " + product.getStock() + ", Requested: " + qty);
             }
+
+            // Accumulate weight from product delivery config (fallback 0.5 kg/unit)
+            ProductDeliveryConfig dc = deliveryConfigRepository.findByProductId(product.getId()).orElse(null);
+            BigDecimal unitWeightKg  = (dc != null && dc.getWeightKg()  != null) ? dc.getWeightKg()  : new BigDecimal("0.5");
+            BigDecimal unitLengthCm  = (dc != null && dc.getLengthCm()  != null) ? dc.getLengthCm()  : new BigDecimal("10.0");
+            BigDecimal unitBreadthCm = (dc != null && dc.getBreadthCm() != null) ? dc.getBreadthCm() : new BigDecimal("10.0");
+            BigDecimal unitHeightCm  = (dc != null && dc.getHeightCm()  != null) ? dc.getHeightCm()  : new BigDecimal("10.0");
+
+            totalWeightKg = totalWeightKg.add(unitWeightKg.multiply(BigDecimal.valueOf(qty)));
+            if (unitLengthCm.compareTo(maxLengthCm)   > 0) maxLengthCm  = unitLengthCm;
+            if (unitBreadthCm.compareTo(maxBreadthCm) > 0) maxBreadthCm = unitBreadthCm;
+            if (unitHeightCm.compareTo(maxHeightCm)   > 0) maxHeightCm  = unitHeightCm;
 
             int stockBefore = product.getStock();
             product.setStock(stockBefore - qty);
@@ -118,6 +148,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setTotalAmount(total);
+        // Snapshot computed shipment weight and dimensions for Shiprocket use
+        order.setShipmentWeightKg(totalWeightKg.compareTo(BigDecimal.ZERO) > 0 ? totalWeightKg : new BigDecimal("0.5"));
+        order.setShipmentLengthCm(maxLengthCm);
+        order.setShipmentBreadthCm(maxBreadthCm);
+        order.setShipmentHeightCm(maxHeightCm);
         Order saved = orderRepository.save(order);
 
         // Set referenceId now that order id is available
@@ -126,20 +161,34 @@ public class OrderServiceImpl implements OrderService {
             inventoryTransactionRepository.save(tx);
         });
 
-        // 7. Status history
+        // 8. Status history
         statusHistoryRepository.save(new OrderStatusHistory(
                 saved, null, Order.OrderStatus.CONFIRMED, userIdentifier, "Order placed"));
 
-        // 8. Clear cart
+        // 9. Clear cart
         cart.getItems().clear();
         cart.setStatus(Cart.CartStatus.CONVERTED);
         cartRepository.save(cart);
 
         log.info("Order {} created for user {} — total ₹{}", saved.getOrderNumber(), userIdentifier, total);
+
+        // 10. Asynchronously create Shiprocket shipment
+        // NOTE: Shipment creation happens OUTSIDE the main transaction to avoid keeping
+        // the DB transaction open while waiting on external API calls.
+        // This is handled by a @Transactional-annotated method in ShipmentService.
+        try {
+            shipmentService.createShipmentForOrder(saved);
+        } catch (Exception e) {
+            // Shipment creation failure does NOT roll back the order
+            // The ShipmentStatusSyncJob will retry pending shipments
+            log.error("Shipment creation failed for order {} (will be retried): {}",
+                    saved.getOrderNumber(), e.getMessage());
+        }
+
         return toResponse(saved, true);
     }
 
-    // ── Queries ───────────────────────────────────────────────────────────
+    // ── Queries ───────────────────────────────────────────────────────────────
 
     @Override
     public Page<OrderResponse> getUserOrders(String userIdentifier, Pageable pageable) {
@@ -179,7 +228,6 @@ public class OrderServiceImpl implements OrderService {
         try {
             parsed = Order.OrderStatus.valueOf(status.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            // Unknown status value → treat as no filter rather than failing the request.
             return orderRepository.findAll(pageable).map(o -> toResponse(o, false));
         }
         return orderRepository.findByStatus(parsed, pageable).map(o -> toResponse(o, false));
@@ -196,7 +244,7 @@ public class OrderServiceImpl implements OrderService {
                 .stream().map(this::toHistoryResponse).toList();
     }
 
-    // ── Status update (admin) ─────────────────────────────────────────────
+    // ── Status update (admin) ─────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -229,7 +277,7 @@ public class OrderServiceImpl implements OrderService {
         return toResponse(saved, true);
     }
 
-    // ── Legacy placeOrder ─────────────────────────────────────────────────
+    // ── Legacy placeOrder ─────────────────────────────────────────────────────
 
     @Override
     @Deprecated
@@ -245,12 +293,22 @@ public class OrderServiceImpl implements OrderService {
         return checkout(userEmail, cr);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void snapshotAddress(Order order, UserAddress address) {
+        order.setSnapFullName(address.getFullName());
+        order.setSnapMobile(address.getMobileNumber());
+        order.setSnapAddress1(address.getAddress1());
+        order.setSnapAddress2(address.getAddress2());
+        order.setSnapCity(address.getCity());
+        order.setSnapState(address.getState());
+        order.setSnapPincode(address.getPincode());
+        order.setSnapCountry(address.getCountry());
+    }
 
     private void restoreStockOnCancellation(Order order, String changedBy) {
         for (OrderItem item : order.getItems()) {
-            ProductDetail product = productRepository.findByIdForUpdate(item.getProduct().getId())
-                    .orElse(null);
+            ProductDetail product = productRepository.findByIdForUpdate(item.getProduct().getId()).orElse(null);
             if (product == null) continue;
             int stockBefore = product.getStock();
             product.setStock(stockBefore + item.getQuantity());
@@ -295,8 +353,20 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .toList();
 
+        // Prefer snapshot address for historical accuracy
         OrderResponse.AddressInfo addrInfo = null;
-        if (order.getAddress() != null) {
+        if (order.getSnapAddress1() != null) {
+            addrInfo = new OrderResponse.AddressInfo();
+            addrInfo.setId(order.getAddress() != null ? order.getAddress().getId() : null);
+            addrInfo.setFullName(order.getSnapFullName());
+            addrInfo.setMobileNumber(order.getSnapMobile());
+            addrInfo.setAddress1(order.getSnapAddress1());
+            addrInfo.setAddress2(order.getSnapAddress2());
+            addrInfo.setCity(order.getSnapCity());
+            addrInfo.setState(order.getSnapState());
+            addrInfo.setPincode(order.getSnapPincode());
+            addrInfo.setCountry(order.getSnapCountry());
+        } else if (order.getAddress() != null) {
             UserAddress a = order.getAddress();
             addrInfo = new OrderResponse.AddressInfo();
             addrInfo.setId(a.getId());
@@ -323,6 +393,7 @@ public class OrderServiceImpl implements OrderService {
                 .userName(order.getUser().getName())
                 .items(items)
                 .totalAmount(order.getTotalAmount())
+                .shippingCharge(order.getShippingCharge())
                 .status(order.getStatus().name())
                 .createdAt(order.getCreatedAt())
                 .address(addrInfo)

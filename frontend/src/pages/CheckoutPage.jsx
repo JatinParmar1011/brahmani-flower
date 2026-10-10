@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { getAddresses, createAddress } from '../services/authService';
 import { checkoutApi } from '../services/orderService';
+import { checkCartServiceability } from '../services/deliveryService';
 import AddressForm, { EMPTY_FORM } from '../components/AddressForm';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -178,13 +179,56 @@ export { StepBar, StepAddress };
 // ─────────────────────────────────────────────────────────────────────────────
 // STEP 2 — ORDER REVIEW
 // ─────────────────────────────────────────────────────────────────────────────
-function StepReview({ items, cartTotal, address, onBack, onNext }) {
+function StepReview({ items, cartTotal, address, addrId, onBack, onNext }) {
   const originalTotal = items.reduce((s, i) => s + (i.originalPrice || i.price) * i.qty, 0);
   const saved = originalTotal - cartTotal;
+
+  const [svcResult,  setSvcResult]  = useState(null);  // null | 'checking' | CartServiceabilityResponse
+  const [svcError,   setSvcError]   = useState('');
+  const [canProceed, setCanProceed] = useState(true);
+
+  // Check serviceability when address is set
+  useEffect(() => {
+    if (!addrId) return;
+    setSvcResult('checking');
+    setSvcError('');
+    checkCartServiceability(addrId)
+      .then(res => {
+        setSvcResult(res);
+        setCanProceed(res.allServiceable);
+      })
+      .catch(() => {
+        setSvcResult(null);
+        setSvcError('');
+        setCanProceed(true); // On error, allow proceed; backend re-validates at checkout
+      });
+  }, [addrId]);
 
   return (
     <div>
       <h2 className="text-lg font-bold text-gray-900 mb-5">Review Your Order</h2>
+
+      {/* Serviceability status banner */}
+      {svcResult === 'checking' && (
+        <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-600 flex items-center gap-2">
+          <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          Checking delivery availability for your address…
+        </div>
+      )}
+      {svcResult && svcResult !== 'checking' && !svcResult.allServiceable && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <p className="font-bold mb-1">⚠ Some items cannot be delivered to this address:</p>
+          {svcResult.items?.filter(i => !i.serviceable).map((i, idx) => (
+            <p key={idx} className="text-xs mt-0.5">• {i.productName}: {i.message}</p>
+          ))}
+          <p className="text-xs mt-2 text-red-500">Please change your address or remove unavailable items to continue.</p>
+        </div>
+      )}
+      {svcResult && svcResult !== 'checking' && svcResult.allServiceable && (
+        <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 flex items-center gap-2">
+          <span>✓</span> All items can be delivered to your selected address.
+        </div>
+      )}
 
       {/* Delivery address */}
       <div className="bg-gradient-to-r from-[#1a6b8a]/5 to-blue-50/40 border border-[#1a6b8a]/15 rounded-2xl p-4 mb-5 flex items-start gap-3">
@@ -284,8 +328,9 @@ function StepReview({ items, cartTotal, address, onBack, onNext }) {
       </div>
 
       <button onClick={onNext}
-        className="w-full bg-gradient-to-r from-[#1a6b8a] to-[#155a75] hover:from-[#155a75] hover:to-[#0f4a62] text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm tracking-wide active:scale-[0.98]">
-        Continue to Payment →
+        disabled={!canProceed || svcResult === 'checking'}
+        className="w-full bg-gradient-to-r from-[#1a6b8a] to-[#155a75] hover:from-[#155a75] hover:to-[#0f4a62] disabled:from-gray-300 disabled:to-gray-300 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm tracking-wide active:scale-[0.98]">
+        {svcResult === 'checking' ? 'Checking delivery…' : !canProceed ? 'Delivery Not Available' : 'Continue to Payment →'}
       </button>
     </div>
   );
@@ -739,7 +784,7 @@ export default function CheckoutPage({ onBack, onViewOrders }) {
                   </div>
                 )}
                 {step === 1 && <StepAddress onNext={handleAddrNext} />}
-                {step === 2 && <StepReview items={items} cartTotal={cartTotal} address={addrObj} onBack={() => setStep(1)} onNext={() => setStep(3)} />}
+                {step === 2 && <StepReview items={items} cartTotal={cartTotal} address={addrObj} addrId={addrId} onBack={() => setStep(1)} onNext={() => setStep(3)} />}
                 {step === 3 && <StepPayment cartTotal={cartTotal} onBack={() => setStep(2)} onPay={handlePay} placing={placing} />}
               </div>
             </div>
