@@ -106,6 +106,24 @@ public class CloudinaryService {
         }
     }
 
+    // Upload single image to Cloudinary under "brahmani-flower/reviews" folder
+    public String uploadReviewImage(MultipartFile file) {
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "brahmani-flower/reviews",
+                            "resource_type", "image",
+                            "quality", "auto",
+                            "fetch_format", "auto"
+                    )
+            );
+            return (String) result.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Review image upload failed: " + e.getMessage());
+        }
+    }
+
     // Upload up to 5 images, returns list of URLs
     public List<String> uploadImages(List<MultipartFile> files) {
         List<String> urls = new ArrayList<>();

@@ -112,18 +112,26 @@ public class OrderResponse {
     // ── Nested: OrderItemResponse ─────────────────────────────────────────
     public static class OrderItemResponse {
         private Long productId;
+        private Long id;
         private String productName;
+        private String productImageUrl;
         private Integer quantity;
         private BigDecimal unitPrice;
         private BigDecimal originalPrice;
         private BigDecimal subtotal;
+        private String reviewStatus;
+        private Boolean eligibleForReview;
 
         public OrderItemResponse() {}
 
+        public Long getId() { return id; }
+        public void setId(Long v) { this.id = v; }
         public Long getProductId() { return productId; }
         public void setProductId(Long v) { this.productId = v; }
         public String getProductName() { return productName; }
         public void setProductName(String v) { this.productName = v; }
+        public String getProductImageUrl() { return productImageUrl; }
+        public void setProductImageUrl(String v) { this.productImageUrl = v; }
         public Integer getQuantity() { return quantity; }
         public void setQuantity(Integer v) { this.quantity = v; }
         public BigDecimal getUnitPrice() { return unitPrice; }
@@ -132,16 +140,24 @@ public class OrderResponse {
         public void setOriginalPrice(BigDecimal v) { this.originalPrice = v; }
         public BigDecimal getSubtotal() { return subtotal; }
         public void setSubtotal(BigDecimal v) { this.subtotal = v; }
+        public String getReviewStatus() { return reviewStatus; }
+        public void setReviewStatus(String v) { this.reviewStatus = v; }
+        public Boolean getEligibleForReview() { return eligibleForReview; }
+        public void setEligibleForReview(Boolean v) { this.eligibleForReview = v; }
 
         public static Builder builder() { return new Builder(); }
         public static class Builder {
             private final OrderItemResponse o = new OrderItemResponse();
+            public Builder id(Long v)                  { o.id = v; return this; }
             public Builder productId(Long v)           { o.productId = v; return this; }
             public Builder productName(String v)       { o.productName = v; return this; }
+            public Builder productImageUrl(String v)   { o.productImageUrl = v; return this; }
             public Builder quantity(Integer v)         { o.quantity = v; return this; }
             public Builder unitPrice(BigDecimal v)     { o.unitPrice = v; return this; }
             public Builder originalPrice(BigDecimal v) { o.originalPrice = v; return this; }
             public Builder subtotal(BigDecimal v)      { o.subtotal = v; return this; }
+            public Builder reviewStatus(String v)      { o.reviewStatus = v; return this; }
+            public Builder eligibleForReview(Boolean v){ o.eligibleForReview = v; return this; }
             public OrderItemResponse build() { return o; }
         }
     }

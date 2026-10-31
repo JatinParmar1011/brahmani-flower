@@ -15,6 +15,7 @@ import BestSellingPage from './pages/BestSellingPage';
 import CategoryItemPage from './pages/CategoryItemPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CheckoutPage from './pages/CheckoutPage';
+import ReviewsPage from './pages/ReviewsPage';
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
 import './App.css';
@@ -81,6 +82,10 @@ function App() {
     setSelectedProduct(null);
   };
 
+  const handleViewAllReviews = () => {
+    setPage('reviews');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {page !== 'admin' && (
@@ -140,6 +145,15 @@ function App() {
           onBack={goHome}
           onCategoryClick={handleCategoryClick}
           onSelectProduct={handleProductClick}
+          onViewAllReviews={handleViewAllReviews}
+        />
+      )}
+
+      {page === 'reviews' && selectedProduct && (
+        <ReviewsPage
+          product={selectedProduct}
+          categoryName={activeCategory}
+          onBack={() => setPage('detail')}
         />
       )}
 

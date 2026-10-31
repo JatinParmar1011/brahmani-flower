@@ -7,7 +7,7 @@ import DetailReviews    from '../components/product/DetailReviews';
 import DetailSimilar    from '../components/product/DetailSimilar';
 import ProductToast     from '../components/product/ProductToast';
 
-export default function ProductDetailPage({ product, categoryName, allProducts = [], wishlist, toggleWishlist, onAddToCart, onBack, onCategoryClick, onSelectProduct }) {
+export default function ProductDetailPage({ product, categoryName, allProducts = [], wishlist, toggleWishlist, onAddToCart, onBack, onCategoryClick, onSelectProduct, onViewAllReviews }) {
   const [toast, setToast] = useState('');
 
   const handleAdd = (p) => {
@@ -56,7 +56,7 @@ export default function ProductDetailPage({ product, categoryName, allProducts =
               <DetailContents product={product} />
             </div>
             <div className="p-6">
-              <DetailReviews rating={product.rating} reviews={product.reviewCount} />
+              <DetailReviews productId={product.id} rating={product.rating} reviews={product.reviewCount} onViewAll={onViewAllReviews} />
             </div>
           </div>
         </div>

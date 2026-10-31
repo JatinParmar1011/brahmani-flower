@@ -536,6 +536,53 @@ CREATE TABLE IF NOT EXISTS shipment (
 );
 
 -- ============================================================
+-- PRODUCT REVIEWS
+-- One review per customer per product (policy: unique customer+product).
+-- is_verified_purchase is calculated by the backend, never from frontend.
+-- status: PENDING, APPROVED, REJECTED, HIDDEN
+-- delivery_city is denormalized from order.snap_city at review creation.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_review (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    product_id          BIGINT          NOT NULL,
+    customer_id         BIGINT          NOT NULL,
+    order_item_id       BIGINT,
+    rating              TINYINT         NOT NULL,
+    title               VARCHAR(255),
+    review_text         TEXT            NOT NULL,
+    status              VARCHAR(20)     NOT NULL DEFAULT 'PENDING',
+    is_verified_purchase BOOLEAN        NOT NULL DEFAULT FALSE,
+    delivery_city       VARCHAR(100),
+    created_at          DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_review_customer_product (customer_id, product_id),
+    CONSTRAINT fk_pr_product   FOREIGN KEY (product_id)   REFERENCES product_detail(id),
+    CONSTRAINT fk_pr_customer  FOREIGN KEY (customer_id)  REFERENCES users(id),
+    CONSTRAINT fk_pr_order_item FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE SET NULL,
+    CONSTRAINT chk_pr_rating CHECK (rating BETWEEN 1 AND 5),
+    INDEX idx_pr_product  (product_id),
+    INDEX idx_pr_customer (customer_id),
+    INDEX idx_pr_status   (status),
+    INDEX idx_pr_created  (created_at)
+);
+
+-- ============================================================
+-- PRODUCT REVIEW IMAGES
+-- Multiple photos per review, stored as Cloudinary URLs.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS product_review_image (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    review_id       BIGINT          NOT NULL,
+    media_url       VARCHAR(500)    NOT NULL,
+    display_order   INT             NOT NULL DEFAULT 0,
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_pri_review FOREIGN KEY (review_id) REFERENCES product_review(id) ON DELETE CASCADE,
+    INDEX idx_pri_review (review_id)
+);
+
+-- ============================================================
 -- SHIPMENT STATUS HISTORY  (audit log for every status change)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS shipment_status_history (

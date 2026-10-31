@@ -5,6 +5,7 @@ import { fetchMyOrders } from '../services/orderService';
 import { fetchOrderShipment, fetchOrderTracking } from '../services/deliveryService';
 import { INDIA_STATES, getCitiesForState } from '../data/indiaCities';
 import CustomDropdown from '../components/CustomDropdown';
+import OrderDetailsPanel from '../components/OrderDetailsPanel';
 
 // ── Sidebar nav items ──────────────────────────────────────────────────────
 const NAV = [
@@ -213,22 +214,18 @@ const statusStyle = {
   CANCELLED:        'bg-red-100 text-red-600',
   PENDING_PAYMENT:  'bg-amber-100 text-amber-700',
 };
-const statusIcon = {
-  CONFIRMED: '✅', PROCESSING: '⚙️', SHIPPED: '🚚',
-  OUT_FOR_DELIVERY: '🛵', DELIVERED: '✅', CANCELLED: '❌', PENDING_PAYMENT: '⏳',
-};
 
-function OrderCard({ o }) {
-  const [open, setOpen] = useState(false);
+function OrderCard({ o, onViewDetails }) {
   const a = o.address;
   const addrLine = a
     ? `${a.address1}${a.address2 ? ', ' + a.address2 : ''}, ${a.city}, ${a.state} – ${a.pincode}`
     : '—';
 
   return (
-    <div className={`border rounded-2xl overflow-hidden transition-all duration-300 bg-white ${
-      open ? 'border-[#1a6b8a] shadow-lg' : 'border-gray-100 hover:shadow-md'
-    }`}>
+    <div
+      className="border rounded-2xl overflow-hidden transition-all duration-200 bg-white border-gray-100 hover:shadow-md hover:border-[#1a6b8a]/30 cursor-pointer"
+      onClick={() => onViewDetails(o.id)}
+    >
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div>
@@ -246,37 +243,11 @@ function OrderCard({ o }) {
         </p>
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
           <span className="text-sm font-bold text-gray-900">₹{o.totalAmount}</span>
-          <button onClick={() => setOpen(v => !v)}
-            className="flex items-center gap-1 text-xs text-[#1a6b8a] font-semibold hover:underline">
-            {open ? 'Hide Details ↑' : 'View Details →'}
-          </button>
+          <span className="flex items-center gap-1 text-xs text-[#1a6b8a] font-semibold">
+            View Details →
+          </span>
         </div>
       </div>
-
-      {open && (
-        <div className="border-t border-[#1a6b8a]/20 bg-gradient-to-br from-[#1a6b8a]/4 to-blue-50/60 px-5 py-5">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {o.items?.map((item, i) => (
-              <div key={i} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Item {i + 1}</p>
-                <p className="text-sm font-semibold text-gray-800">🌸 {item.productName}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity} × ₹{item.unitPrice}</p>
-                <p className="text-xs font-bold text-gray-700 mt-0.5">₹{item.subtotal}</p>
-              </div>
-            ))}
-            <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm col-span-2">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Delivery Address</p>
-              <p className="text-sm text-gray-700">📍 {addrLine}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-white rounded-xl px-4 py-3 border border-gray-100 shadow-sm">
-            <span className="text-lg">{statusIcon[o.status] || '📦'}</span>
-            <div>
-              <p className="text-xs font-bold text-gray-700">Status: {o.status?.replaceAll('_', ' ')}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -287,6 +258,7 @@ function OrderHistoryPanel() {
   const [error, setError]     = useState('');
   const [page, setPage]       = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   const load = (p = 0) => {
     setLoading(true);
@@ -301,6 +273,16 @@ function OrderHistoryPanel() {
   };
 
   useEffect(() => { load(0); }, []);
+
+  // Show Order Details view
+  if (selectedOrderId) {
+    return (
+      <OrderDetailsPanel
+        orderId={selectedOrderId}
+        onBack={() => setSelectedOrderId(null)}
+      />
+    );
+  }
 
   return (
     <div>
@@ -319,7 +301,7 @@ function OrderHistoryPanel() {
       ) : (
         <>
           <div className="flex flex-col gap-4">
-            {orders.map(o => <OrderCard key={o.id} o={o} />)}
+            {orders.map(o => <OrderCard key={o.id} o={o} onViewDetails={setSelectedOrderId} />)}
           </div>
           {totalPages > 1 && (
             <div className="flex justify-center gap-3 mt-6">

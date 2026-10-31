@@ -39,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductDeliveryConfigRepository deliveryConfigRepository;
     private final DeliveryServiceabilityService  serviceabilityService;
     private final ShipmentService                shipmentService;
+    private final ProductReviewRepository        reviewRepository;
 
     // ── Checkout from cart ────────────────────────────────────────────────────
 
@@ -342,15 +343,34 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse toResponse(Order order, boolean includeHistory) {
+        Long orderUserId = order.getUser().getId();
+
         List<OrderResponse.OrderItemResponse> items = order.getItems().stream()
-                .map(item -> OrderResponse.OrderItemResponse.builder()
-                        .productId(item.getProduct().getId())
-                        .productName(item.getProductName())
-                        .quantity(item.getQuantity())
-                        .unitPrice(item.getUnitPrice())
-                        .originalPrice(item.getOriginalPrice())
-                        .subtotal(item.getSubtotal())
-                        .build())
+                .map(item -> {
+                    // Find existing review for this customer + product
+                    String reviewStatus = reviewRepository
+                            .findByProductIdAndCustomerId(item.getProduct().getId(), orderUserId)
+                            .map(r -> r.getStatus().name())
+                            .orElse(null);
+
+                    boolean alreadyReviewed = reviewStatus != null;
+                    // Eligible if delivered and not yet reviewed
+                    boolean eligible = !alreadyReviewed
+                            && order.getStatus() == Order.OrderStatus.DELIVERED;
+
+                    return OrderResponse.OrderItemResponse.builder()
+                            .id(item.getId())
+                            .productId(item.getProduct().getId())
+                            .productName(item.getProductName())
+                            .productImageUrl(item.getProduct().getImageUrl())
+                            .quantity(item.getQuantity())
+                            .unitPrice(item.getUnitPrice())
+                            .originalPrice(item.getOriginalPrice())
+                            .subtotal(item.getSubtotal())
+                            .reviewStatus(reviewStatus)
+                            .eligibleForReview(eligible)
+                            .build();
+                })
                 .toList();
 
         // Prefer snapshot address for historical accuracy
