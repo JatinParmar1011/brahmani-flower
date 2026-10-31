@@ -553,6 +553,8 @@ CREATE TABLE IF NOT EXISTS product_review (
     status              VARCHAR(20)     NOT NULL DEFAULT 'PENDING',
     is_verified_purchase BOOLEAN        NOT NULL DEFAULT FALSE,
     delivery_city       VARCHAR(100),
+    is_featured         BOOLEAN         NOT NULL DEFAULT FALSE,
+    featured_order      INT             DEFAULT NULL,
     created_at          DATETIME        DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -561,10 +563,12 @@ CREATE TABLE IF NOT EXISTS product_review (
     CONSTRAINT fk_pr_customer  FOREIGN KEY (customer_id)  REFERENCES users(id),
     CONSTRAINT fk_pr_order_item FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE SET NULL,
     CONSTRAINT chk_pr_rating CHECK (rating BETWEEN 1 AND 5),
-    INDEX idx_pr_product  (product_id),
-    INDEX idx_pr_customer (customer_id),
-    INDEX idx_pr_status   (status),
-    INDEX idx_pr_created  (created_at)
+    INDEX idx_pr_product    (product_id),
+    INDEX idx_pr_customer   (customer_id),
+    INDEX idx_pr_status     (status),
+    INDEX idx_pr_featured   (is_featured),
+    INDEX idx_pr_feat_order (featured_order),
+    INDEX idx_pr_created    (created_at)
 );
 
 -- ============================================================
@@ -601,3 +605,17 @@ CREATE TABLE IF NOT EXISTS shipment_status_history (
     INDEX idx_ssh_new_status (new_status),
     INDEX idx_ssh_received  (received_at)
 );
+
+-- ── Add featured columns to product_review for existing databases ───────────
+-- Safe to run multiple times — ADD COLUMN errors if already present, so
+-- run each line separately or wrap in a stored procedure if needed.
+-- ALTER TABLE product_review ADD COLUMN is_featured BOOLEAN NOT NULL DEFAULT FALSE;
+-- ALTER TABLE product_review ADD COLUMN featured_order INT DEFAULT NULL;
+-- ALTER TABLE product_review ADD INDEX idx_pr_featured (is_featured);
+-- ALTER TABLE product_review ADD INDEX idx_pr_feat_order (featured_order);
+
+-- ── Add moderation audit columns to product_review ──────────────────────────
+-- ALTER TABLE product_review ADD COLUMN moderated_by BIGINT DEFAULT NULL;
+-- ALTER TABLE product_review ADD COLUMN moderated_at DATETIME DEFAULT NULL;
+-- ALTER TABLE product_review ADD COLUMN moderation_reason VARCHAR(500) DEFAULT NULL;
+-- ALTER TABLE product_review ADD INDEX idx_pr_moderated_by (moderated_by);

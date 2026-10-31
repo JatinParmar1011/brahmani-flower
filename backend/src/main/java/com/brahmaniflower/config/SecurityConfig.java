@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/gallery/**").permitAll()
                         // Public homepage media — GET only
                         .requestMatchers(HttpMethod.GET, "/api/homepage-media").permitAll()
+                        // Public: featured customer reviews for homepage
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/featured").permitAll()
                         // Public: product delivery serviceability check (product detail page)
                         .requestMatchers(HttpMethod.POST, "/api/delivery/serviceability/check").permitAll()
                         // Shiprocket webhook — public but validated via secret header

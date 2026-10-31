@@ -243,11 +243,18 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             }
         }
 
-        // 5. Update fields
+        // 5. Update fields — preserve admin moderation state.
+        //    A customer edit must NEVER override a REJECTED or HIDDEN status set by admin.
+        //    Only restore to APPROVED if the review is currently APPROVED (no-op effectively)
+        //    or was previously PENDING. Never touch REJECTED/HIDDEN.
         review.setRating(request.getRating());
         review.setTitle(request.getTitle());
         review.setReviewText(request.getReviewText());
-        review.setStatus(ProductReview.ReviewStatus.APPROVED);
+        if (review.getStatus() == ProductReview.ReviewStatus.APPROVED
+                || review.getStatus() == ProductReview.ReviewStatus.PENDING) {
+            review.setStatus(ProductReview.ReviewStatus.APPROVED); // keep as approved
+        }
+        // If REJECTED or HIDDEN, do NOT touch the status — admin moderation takes priority.
 
         ProductReview saved = reviewRepository.save(review);
 

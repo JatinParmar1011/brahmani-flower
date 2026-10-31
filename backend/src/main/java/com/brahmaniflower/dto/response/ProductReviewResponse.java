@@ -17,6 +17,8 @@ public class ProductReviewResponse {
     private String reviewText;
     private String status;
     private Boolean verifiedPurchase;
+    private Boolean featured;
+    private Integer featuredOrder;
     private List<ProductReviewImageResponse> images;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -35,6 +37,8 @@ public class ProductReviewResponse {
         dto.reviewText       = r.getReviewText();
         dto.status           = r.getStatus().name();
         dto.verifiedPurchase = r.getVerifiedPurchase();
+        dto.featured         = r.getFeatured();
+        dto.featuredOrder    = r.getFeaturedOrder();
         dto.images           = r.getImages().stream()
                 .sorted(java.util.Comparator.comparingInt(img -> img.getDisplayOrder()))
                 .map(ProductReviewImageResponse::from)
@@ -56,6 +60,8 @@ public class ProductReviewResponse {
     public String getReviewText() { return reviewText; }
     public String getStatus() { return status; }
     public Boolean getVerifiedPurchase() { return verifiedPurchase; }
+    public Boolean getFeatured() { return featured; }
+    public Integer getFeaturedOrder() { return featuredOrder; }
     public List<ProductReviewImageResponse> getImages() { return images; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

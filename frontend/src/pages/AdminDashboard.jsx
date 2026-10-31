@@ -8,17 +8,19 @@ import AdminCustomers from '../components/admin/AdminCustomers';
 import AdminGallery from '../components/admin/AdminGallery';
 import AdminHomepageMedia from '../components/admin/AdminHomepageMedia';
 import AdminCategories from '../components/admin/AdminCategories';
+import AdminReviews from '../components/admin/AdminReviews';
 import { getAdminProfile } from '../services/authService';
 
 const PAGE_TITLE = {
-  dashboard:  { title: 'Dashboard Overview',      sub: 'Welcome back, Admin 👋' },
-  orders:     { title: 'Orders Management',        sub: 'Track and manage all orders' },
-  products:   { title: 'Products',                 sub: 'Manage your flower inventory' },
-  customers:  { title: 'Customers',                sub: 'View registered customers' },
-  categories: { title: 'Category Management',      sub: 'Manage category types and categories with images' },
-  gallery:    { title: 'Gallery Management',        sub: 'Manage gallery categories and photos' },
-  homepage:   { title: 'Homepage Media',            sub: 'Manage hero slider, city delivery, advertise images and spotlight videos' },
-  profile:    { title: 'My Profile',               sub: 'Manage your admin account' },
+  dashboard:  { title: 'Dashboard Overview',          sub: 'Welcome back, Admin 👋' },
+  orders:     { title: 'Orders Management',            sub: 'Track and manage all orders' },
+  products:   { title: 'Products',                     sub: 'Manage your flower inventory' },
+  customers:  { title: 'Customers',                    sub: 'View registered customers' },
+  categories: { title: 'Category Management',          sub: 'Manage category types and categories with images' },
+  gallery:    { title: 'Gallery Management',            sub: 'Manage gallery categories and photos' },
+  homepage:   { title: 'Homepage Media',                sub: 'Manage hero slider, city delivery, advertise images and spotlight videos' },
+  reviews:    { title: 'Reviews Management',          sub: 'Moderate reviews and manage homepage featured section' },
+  profile:    { title: 'My Profile',                   sub: 'Manage your admin account' },
 };
 
 export default function AdminDashboard({ onSignOut }) {
@@ -67,6 +69,7 @@ export default function AdminDashboard({ onSignOut }) {
           {tab === 'categories' && <AdminCategories />}
           {tab === 'gallery'    && <AdminGallery />}
           {tab === 'homepage'   && <AdminHomepageMedia />}
+          {tab === 'reviews'    && <AdminReviews />}
           {tab === 'profile'    && <AdminProfile onSignOut={onSignOut} />}
         </main>
       </div>

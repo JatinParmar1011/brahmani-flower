@@ -55,6 +55,24 @@ public class ProductReview {
     @Column(name = "delivery_city", length = 100)
     private String deliveryCity;
 
+    @Column(name = "is_featured", nullable = false)
+    private Boolean featured = false;
+
+    @Column(name = "featured_order")
+    private Integer featuredOrder;
+
+    /** Admin user ID who last moderated this review. */
+    @Column(name = "moderated_by")
+    private Long moderatedBy;
+
+    /** Timestamp of last moderation action. */
+    @Column(name = "moderated_at")
+    private LocalDateTime moderatedAt;
+
+    /** Reason provided by admin when rejecting or hiding. */
+    @Column(name = "moderation_reason", length = 500)
+    private String moderationReason;
+
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductReviewImage> images = new ArrayList<>();
 
@@ -96,6 +114,21 @@ public class ProductReview {
 
     public String getDeliveryCity() { return deliveryCity; }
     public void setDeliveryCity(String deliveryCity) { this.deliveryCity = deliveryCity; }
+
+    public Boolean getFeatured() { return featured; }
+    public void setFeatured(Boolean featured) { this.featured = featured != null ? featured : false; }
+
+    public Integer getFeaturedOrder() { return featuredOrder; }
+    public void setFeaturedOrder(Integer featuredOrder) { this.featuredOrder = featuredOrder; }
+
+    public Long getModeratedBy() { return moderatedBy; }
+    public void setModeratedBy(Long moderatedBy) { this.moderatedBy = moderatedBy; }
+
+    public LocalDateTime getModeratedAt() { return moderatedAt; }
+    public void setModeratedAt(LocalDateTime moderatedAt) { this.moderatedAt = moderatedAt; }
+
+    public String getModerationReason() { return moderationReason; }
+    public void setModerationReason(String moderationReason) { this.moderationReason = moderationReason; }
 
     public List<ProductReviewImage> getImages() { return images; }
 

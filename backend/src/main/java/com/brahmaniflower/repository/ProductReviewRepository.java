@@ -59,4 +59,32 @@ public interface ProductReviewRepository extends JpaRepository<ProductReview, Lo
     java.util.List<Object[]> findRatingDistributionByProductId(@Param("productId") Long productId);
 
     boolean existsByProductIdAndCustomerId(Long productId, Long customerId);
+
+    // ── Featured reviews ──────────────────────────────────────────────────
+
+    /** All APPROVED + featured reviews ordered by featured_order ASC for the homepage. */
+    @Query("SELECT r FROM ProductReview r LEFT JOIN FETCH r.images LEFT JOIN FETCH r.product " +
+           "WHERE r.featured = true AND r.status = 'APPROVED' " +
+           "ORDER BY r.featuredOrder ASC NULLS LAST")
+    List<ProductReview> findFeaturedReviews();
+
+    /** Paginated list of ALL approved reviews for the admin panel (to pick from). */
+    @Query(value = "SELECT r.id FROM ProductReview r WHERE r.status = 'APPROVED'",
+           countQuery = "SELECT COUNT(r) FROM ProductReview r WHERE r.status = 'APPROVED'")
+    Page<Long> findApprovedIds(Pageable pageable);
+
+    /** Paginated review IDs filtered by a specific status for the admin panel. */
+    @Query(value = "SELECT r.id FROM ProductReview r WHERE r.status = :status",
+           countQuery = "SELECT COUNT(r) FROM ProductReview r WHERE r.status = :status")
+    Page<Long> findIdsByStatus(@Param("status") ProductReview.ReviewStatus status, Pageable pageable);
+
+    /** Paginated review IDs for ALL statuses (admin sees everything). */
+    @Query(value = "SELECT r.id FROM ProductReview r",
+           countQuery = "SELECT COUNT(r) FROM ProductReview r")
+    Page<Long> findAllIds(Pageable pageable);
+
+    /** Load approved reviews by IDs with images + product for admin panel. */
+    @Query("SELECT r FROM ProductReview r LEFT JOIN FETCH r.images LEFT JOIN FETCH r.product " +
+           "WHERE r.id IN :ids")
+    List<ProductReview> findByIdsWithDetailsAndProduct(@Param("ids") List<Long> ids);
 }
