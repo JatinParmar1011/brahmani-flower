@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/featured").permitAll()
                         // Public: product delivery serviceability check (product detail page)
                         .requestMatchers(HttpMethod.POST, "/api/delivery/serviceability/check").permitAll()
+                        // Contact enquiry submission — public (guests + authenticated customers)
+                        .requestMatchers(HttpMethod.POST, "/api/contact-enquiries").permitAll()
                         // Shiprocket webhook — public but validated via secret header
                         .requestMatchers(HttpMethod.POST, "/api/webhooks/shiprocket").permitAll()
                         // Guest cart — public, identified by session cookie

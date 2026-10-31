@@ -7,6 +7,7 @@ const NAV = [
   { key: 'gallery',   icon: '🖼️', label: 'Gallery' },
   { key: 'homepage',  icon: '🏠', label: 'Homepage Media' },
   { key: 'reviews',   icon: '⭐', label: 'Reviews Management' },
+  { key: 'enquiries', icon: '💬', label: 'Enquiries' },
   { key: 'profile',   icon: '👤', label: 'My Profile' },
 ];
 

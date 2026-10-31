@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { fetchGallery } from '../services/galleryService';
+import { useAuth } from '../context/AuthContext';
+import { getProfile } from '../services/authService';
+import { submitContactEnquiry } from '../services/contactEnquiryService';
 
 // ── FAQ ────────────────────────────────────────────────────────────────────
 const FAQS = [
@@ -119,10 +122,152 @@ function AboutPage() {
 }
 
 // ── Contact Us ─────────────────────────────────────────────────────────────
+
+const ENQUIRY_CATEGORIES = [
+  { value: 'GENERAL_ENQUIRY',       label: 'General Enquiry' },
+  { value: 'ORDER_ISSUE',           label: 'Order Issue' },
+  { value: 'DELIVERY_PROBLEM',      label: 'Delivery Problem' },
+  { value: 'PRODUCT_QUALITY',       label: 'Product Quality' },
+  { value: 'PAYMENT_RELATED',       label: 'Payment Related' },
+  { value: 'RETURN_REFUND_REQUEST', label: 'Return / Refund Request' },
+  { value: 'COMPLAINT',             label: 'Complaint' },
+  { value: 'OTHER',                 label: 'Other' },
+];
+
+const EMPTY_FORM = {
+  fullName: '', email: '', phone: '',
+  subject: '', category: '', message: '',
+};
+
+const INPUT_CLS = 'w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 transition-colors';
+const ERR_CLS   = 'text-[11px] text-red-500 mt-1';
+
 function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [sent, setSent] = useState(false);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const { user } = useAuth();
+
+  const [form, setForm]         = useState(EMPTY_FORM);
+  const [errors, setErrors]     = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [submitted, setSubmitted] = useState(null); // holds response DTO on success
+  const [apiError, setApiError] = useState('');
+
+  // Auto-populate for logged-in customer
+  useEffect(() => {
+    if (!user) return;
+    getProfile()
+      .then(p => setForm(f => ({
+        ...f,
+        fullName: p.name         || f.fullName,
+        email:    p.email        || f.email,
+        phone:    p.mobileNumber || f.phone,
+      })))
+      .catch(() => {
+        // Fallback to auth context values
+        setForm(f => ({
+          ...f,
+          fullName: user.name         || f.fullName,
+          phone:    user.mobileNumber || f.phone,
+        }));
+      });
+  }, [user]);
+
+  const set = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }));
+    setErrors(e => ({ ...e, [k]: '' }));
+    setApiError('');
+  };
+
+  const validate = () => {
+    const errs = {};
+
+    // Full Name: required, 2–30 chars, letters/spaces/dots/hyphens only
+    const name = form.fullName.trim();
+    if (!name)
+      errs.fullName = 'Full name is required';
+    else if (name.length < 2)
+      errs.fullName = 'Name must be at least 2 characters';
+    else if (name.length > 30)
+      errs.fullName = 'Name must not exceed 30 characters';
+    else if (!/^[A-Za-z\s.\-']+$/.test(name))
+      errs.fullName = 'Name can only contain letters, spaces, dots, and hyphens';
+
+    // Email: required, valid format, max 255 chars
+    const email = form.email.trim();
+    if (!email)
+      errs.email = 'Email address is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+      errs.email = 'Please enter a valid email address (e.g. name@example.com)';
+    else if (email.length > 255)
+      errs.email = 'Email must not exceed 255 characters';
+
+    // Phone: required, exactly 10 digits, no +91 prefix, must not start with 0
+    const phone = form.phone?.trim();
+    if (!phone) {
+      errs.phone = 'Phone number is required';
+    } else {
+      const digits = phone.replace(/\D/g, '');
+      if (!/^\d{10}$/.test(phone))
+        errs.phone = 'Enter a 10-digit mobile number (e.g. 9876543210)';
+      else if (phone.startsWith('+91') || phone.startsWith('91') || phone.startsWith('0'))
+        errs.phone = 'Do not include country code or leading 0 — enter 10 digits only';
+      else if (!['6','7','8','9'].includes(phone[0]))
+        errs.phone = 'Enter a valid Indian mobile number starting with 6, 7, 8, or 9';
+    }
+
+    // Subject: required, 5–50 chars
+    const subject = form.subject.trim();
+    if (!subject)
+      errs.subject = 'Subject is required';
+    else if (subject.length < 5)
+      errs.subject = 'Subject must be at least 5 characters';
+    else if (subject.length > 50)
+      errs.subject = 'Subject must not exceed 50 characters';
+
+    // Category
+    if (!form.category)
+      errs.category = 'Please select an enquiry category';
+
+    // Message: required, 10–5000 chars
+    const msg = form.message.trim();
+    if (!msg)
+      errs.message = 'Message is required';
+    else if (msg.length < 10)
+      errs.message = 'Message must be at least 10 characters';
+    else if (msg.length > 5000)
+      errs.message = 'Message must not exceed 5000 characters';
+
+    return errs;
+  };
+
+  const handleSubmit = async () => {
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+
+    setLoading(true);
+    setApiError('');
+    try {
+      const res = await submitContactEnquiry({
+        fullName: form.fullName.trim(),
+        email:    form.email.trim(),
+        phone:    form.phone?.trim() || null,
+        subject:  form.subject.trim(),
+        category: form.category,
+        message:  form.message.trim(),
+      });
+      setSubmitted(res.data);
+    } catch (err) {
+      setApiError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setSubmitted(null);
+    setForm(EMPTY_FORM);
+    setErrors({});
+    setApiError('');
+  };
 
   return (
     <div>
@@ -133,11 +278,13 @@ function ContactPage() {
           <p className="text-sm text-gray-400">We'd love to hear from you</p>
         </div>
       </div>
+
+      {/* Contact info cards */}
       <div className="mt-7 grid grid-cols-3 gap-4 mb-7">
         {[
-          { icon: '📞', title: 'Phone', val: '+91 98765 43210', sub: 'Mon–Sat, 9 AM – 7 PM' },
-          { icon: '📧', title: 'Email', val: 'support@bramhaniflower.com', sub: 'Reply within 24 hours' },
-          { icon: '📍', title: 'Address', val: 'Mumbai, Maharashtra', sub: 'India - 400001' },
+          { icon: '📞', title: 'Phone',   val: '+91 98765 43210',           sub: 'Mon–Sat, 9 AM – 7 PM' },
+          { icon: '📧', title: 'Email',   val: 'support@bramhaniflower.com', sub: 'Reply within 24 hours' },
+          { icon: '📍', title: 'Address', val: 'Mumbai, Maharashtra',        sub: 'India - 400001' },
         ].map(c => (
           <div key={c.title} className="bg-white border border-gray-100 rounded-2xl p-5 text-center hover:border-[#1a6b8a]/30 hover:shadow-sm transition-all">
             <span className="text-2xl">{c.icon}</span>
@@ -147,45 +294,169 @@ function ContactPage() {
           </div>
         ))}
       </div>
-      {sent ? (
+
+      {/* Success state */}
+      {submitted ? (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
           <div className="text-5xl mb-3">✅</div>
-          <p className="text-lg font-bold text-green-700">Message Sent!</p>
-          <p className="text-sm text-green-600 mt-1">We'll get back to you within 24 hours.</p>
-          <button onClick={() => setSent(false)} className="mt-4 text-sm text-[#1a6b8a] font-semibold hover:underline">Send another message</button>
+          <p className="text-lg font-bold text-green-700">Enquiry Submitted Successfully!</p>
+          <p className="text-sm text-green-600 mt-1">Your reference number is:</p>
+          <p className="text-base font-bold text-[#1a6b8a] mt-2 tracking-wide">{submitted.enquiryNumber}</p>
+          <p className="text-sm text-green-600 mt-3">
+            We have sent an acknowledgement to <strong>{submitted.email}</strong>.<br />
+            Our team will get back to you within 24 hours.
+          </p>
+          <button
+            onClick={handleReset}
+            className="mt-5 text-sm text-[#1a6b8a] font-semibold hover:underline"
+          >
+            Send another enquiry
+          </button>
         </div>
       ) : (
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 mb-5">Send us a message</h3>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-bold text-gray-700">Send us a message</h3>
+            {user && (
+              <span className="text-[11px] text-[#1a6b8a] bg-[#1a6b8a]/8 border border-[#1a6b8a]/20 rounded-full px-3 py-1 font-medium">
+                ✓ Logged in — details pre-filled
+              </span>
+            )}
+          </div>
+
+          {apiError && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              ❌ {apiError}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4 mb-4">
+            {/* Full Name */}
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Your Name</label>
-              <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Full name"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20" />
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                Full Name <span className="text-red-400">*</span>
+              </label>
+              <input
+                value={form.fullName}
+                onChange={e => set('fullName', e.target.value)}
+                placeholder="Your full name"
+                maxLength={30}
+                className={`${INPUT_CLS} ${errors.fullName ? 'border-red-400' : ''}`}
+              />
+              {errors.fullName && <p className={ERR_CLS}>{errors.fullName}</p>}
             </div>
+
+            {/* Email */}
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
-              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="your@email.com"
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20" />
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                Email Address <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => set('email', e.target.value)}
+                placeholder="name@example.com"
+                maxLength={255}
+                className={`${INPUT_CLS} ${errors.email ? 'border-red-400' : ''}`}
+              />
+              {errors.email && <p className={ERR_CLS}>{errors.email}</p>}
             </div>
-            <div className="col-span-2">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Subject</label>
-              <select value={form.subject} onChange={e => set('subject', e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 bg-white">
-                <option value="">Select a subject</option>
-                {['Order Issue', 'Delivery Problem', 'Product Quality', 'Refund Request', 'General Inquiry'].map(s => <option key={s}>{s}</option>)}
+
+            {/* Phone */}
+            <div>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                Phone Number <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={e => set('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="10-digit mobile number"
+                maxLength={10}
+                className={`${INPUT_CLS} ${errors.phone ? 'border-red-400' : ''}`}
+              />
+              {errors.phone
+                ? <p className={ERR_CLS}>{errors.phone}</p>
+                : <p className="text-[11px] text-gray-400 mt-1">Enter 10 digits without country code</p>
+              }
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                Enquiry Category <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={form.category}
+                onChange={e => set('category', e.target.value)}
+                className={`${INPUT_CLS} bg-white ${errors.category ? 'border-red-400' : ''}`}
+              >
+                <option value="">Select a category</option>
+                {ENQUIRY_CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
               </select>
+              {errors.category && <p className={ERR_CLS}>{errors.category}</p>}
             </div>
+
+            {/* Subject — full width */}
             <div className="col-span-2">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">Message</label>
-              <textarea value={form.message} onChange={e => set('message', e.target.value)} rows={4} placeholder="Describe your issue or question..."
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#1a6b8a] focus:ring-2 focus:ring-[#1a6b8a]/20 resize-none" />
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                Subject <span className="text-red-400">*</span>
+              </label>
+              <input
+                value={form.subject}
+                onChange={e => set('subject', e.target.value)}
+                placeholder="Brief subject of your enquiry"
+                maxLength={50}
+                className={`${INPUT_CLS} ${errors.subject ? 'border-red-400' : ''}`}
+              />
+              {errors.subject && <p className={ERR_CLS}>{errors.subject}</p>}
+            </div>
+
+            {/* Message */}
+            <div className="col-span-2">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                Message <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={form.message}
+                onChange={e => set('message', e.target.value)}
+                rows={5}
+                placeholder="Please describe your issue or question in detail..."
+                className={`${INPUT_CLS} resize-none ${errors.message ? 'border-red-400' : ''}`}
+              />
+              <div className="flex items-center justify-between mt-1">
+                {errors.message
+                  ? <p className={ERR_CLS}>{errors.message}</p>
+                  : <span />
+                }
+                <span className={`text-[11px] ${form.message.length > 4900 ? 'text-red-400' : 'text-gray-400'}`}>
+                  {form.message.length}/5000
+                </span>
+              </div>
             </div>
           </div>
-          <button onClick={() => { if (form.name && form.email && form.message) setSent(true); }}
-            className="bg-[#1a6b8a] hover:bg-[#155a75] text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors">
-            Send Message 📨
-          </button>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-[#1a6b8a] hover:bg-[#155a75] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Submitting…
+                </>
+              ) : (
+                'Send Message 📨'
+              )}
+            </button>
+            <p className="text-[11px] text-gray-400">
+              <span className="text-red-400">*</span> Required fields
+            </p>
+          </div>
         </div>
       )}
     </div>

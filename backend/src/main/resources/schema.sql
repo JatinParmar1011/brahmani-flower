@@ -619,3 +619,67 @@ CREATE TABLE IF NOT EXISTS shipment_status_history (
 -- ALTER TABLE product_review ADD COLUMN moderated_at DATETIME DEFAULT NULL;
 -- ALTER TABLE product_review ADD COLUMN moderation_reason VARCHAR(500) DEFAULT NULL;
 -- ALTER TABLE product_review ADD INDEX idx_pr_moderated_by (moderated_by);
+
+-- ============================================================
+-- CONTACT ENQUIRIES
+-- Stores customer contact/support enquiries (guests + logged-in).
+-- enquiry_number format: ENQ-YYYYMMDD-XXXXXX (e.g. ENQ-20261101-000001)
+-- customer_id is nullable — NULL means guest enquiry.
+-- status  : NEW | IN_PROGRESS | WAITING_FOR_CUSTOMER | RESOLVED | CLOSED
+-- priority: LOW | MEDIUM | HIGH | URGENT
+-- category: GENERAL_ENQUIRY | ORDER_ISSUE | DELIVERY_PROBLEM |
+--            PRODUCT_QUALITY | PAYMENT_RELATED | RETURN_REFUND_REQUEST |
+--            COMPLAINT | OTHER
+-- ============================================================
+CREATE TABLE IF NOT EXISTS contact_enquiry (
+    id               BIGINT          NOT NULL AUTO_INCREMENT,
+    enquiry_number   VARCHAR(30)     NOT NULL,
+    customer_id      BIGINT          DEFAULT NULL,
+    full_name        VARCHAR(150)    NOT NULL,
+    email            VARCHAR(255)    NOT NULL,
+    phone            VARCHAR(20)     DEFAULT NULL,
+    subject          VARCHAR(255)    NOT NULL,
+    category         VARCHAR(50)     NOT NULL DEFAULT 'GENERAL_ENQUIRY',
+    message          TEXT            NOT NULL,
+    status           VARCHAR(30)     NOT NULL DEFAULT 'NEW',
+    priority         VARCHAR(20)     NOT NULL DEFAULT 'MEDIUM',
+    created_at       DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_enquiry_number (enquiry_number),
+    CONSTRAINT fk_ce_customer FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_ce_customer  (customer_id),
+    INDEX idx_ce_status    (status),
+    INDEX idx_ce_priority  (priority),
+    INDEX idx_ce_category  (category),
+    INDEX idx_ce_email     (email),
+    INDEX idx_ce_created   (created_at)
+);
+
+-- ============================================================
+-- CONTACT ENQUIRY REPLIES
+-- Stores admin reply emails + status-change history events.
+-- event_type: REPLY  = admin sent an email reply
+--             STATUS_CHANGE = admin changed the enquiry status
+-- status_before / status_after: only set for STATUS_CHANGE events
+-- email_subject / email_body: only set for REPLY events
+-- admin_id: FK to users (nullable in case account is deleted)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS contact_enquiry_reply (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    enquiry_id      BIGINT          NOT NULL,
+    event_type      VARCHAR(20)     NOT NULL DEFAULT 'REPLY',
+    admin_id        BIGINT          DEFAULT NULL,
+    admin_name      VARCHAR(255)    DEFAULT NULL,
+    email_subject   VARCHAR(500)    DEFAULT NULL,
+    email_body      TEXT            DEFAULT NULL,
+    status_before   VARCHAR(30)     DEFAULT NULL,
+    status_after    VARCHAR(30)     DEFAULT NULL,
+    created_at      DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_cer_enquiry FOREIGN KEY (enquiry_id) REFERENCES contact_enquiry(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cer_admin   FOREIGN KEY (admin_id)   REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_cer_enquiry  (enquiry_id),
+    INDEX idx_cer_type     (event_type),
+    INDEX idx_cer_created  (created_at)
+);

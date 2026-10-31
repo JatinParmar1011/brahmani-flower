@@ -40,6 +40,8 @@ export default function AdminOrders() {
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
   const [searchKey,  setSearchKey]  = useState('order'); // 'order' | 'customer' | 'city'
+  const [fromDate,   setFromDate]   = useState('');
+  const [toDate,     setToDate]     = useState('');
   // Stable per-status counts for the summary cards — loaded unfiltered so they
   // do NOT change when the status filter is applied.
   const [statusCounts, setStatusCounts] = useState({}); // { STATUS: n }
@@ -87,11 +89,20 @@ export default function AdminOrders() {
 
   const filtered = (() => {
     const q = search.trim().toLowerCase();
-    if (!q) return orders;
     return orders.filter(o => {
-      if (searchKey === 'order')    return o.orderNumber?.toLowerCase().includes(q);
-      if (searchKey === 'customer') return o.userName?.toLowerCase().includes(q);
-      if (searchKey === 'city')     return (o.address?.city || '').toLowerCase().includes(q);
+      // Text search
+      if (q) {
+        if (searchKey === 'order'    && !o.orderNumber?.toLowerCase().includes(q)) return false;
+        if (searchKey === 'customer' && !o.userName?.toLowerCase().includes(q))    return false;
+        if (searchKey === 'city'     && !(o.address?.city || '').toLowerCase().includes(q)) return false;
+      }
+      // Date range
+      if (fromDate || toDate) {
+        const orderDate = o.createdAt ? new Date(o.createdAt) : null;
+        if (!orderDate) return false;
+        if (fromDate && orderDate < new Date(fromDate)) return false;
+        if (toDate   && orderDate > new Date(toDate + 'T23:59:59')) return false;
+      }
       return true;
     });
   })();
@@ -128,7 +139,7 @@ export default function AdminOrders() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h3 className="font-bold text-gray-800 text-lg">All Orders</h3>
-              <p className="text-xs text-gray-400 mt-0.5">{total} total orders</p>
+              <p className="text-xs text-gray-400 mt-0.5">{filtered.length !== total ? `${filtered.length} of ${total}` : total} total orders</p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {/* Filter 1 — field selector + value */}
@@ -153,6 +164,16 @@ export default function AdminOrders() {
                     <option key={f} value={f}>{f === 'All' ? 'All Status' : f.replaceAll('_', ' ')}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Filter 3 — Date range: From – To */}
+              <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden focus-within:border-[#1a6b8a] focus-within:ring-2 focus-within:ring-[#1a6b8a]/15 transition-all">
+                <span className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2 whitespace-nowrap">From</span>
+                <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
+                  className="px-2 py-2 text-sm outline-none bg-white border-r border-gray-200 cursor-pointer" />
+                <span className="text-xs font-semibold text-[#1a6b8a] bg-gray-50 border-r border-gray-200 px-3 py-2">To</span>
+                <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
+                  className="px-2 py-2 text-sm outline-none bg-white cursor-pointer" />
               </div>
             </div>
           </div>

@@ -9,6 +9,7 @@ import AdminGallery from '../components/admin/AdminGallery';
 import AdminHomepageMedia from '../components/admin/AdminHomepageMedia';
 import AdminCategories from '../components/admin/AdminCategories';
 import AdminReviews from '../components/admin/AdminReviews';
+import AdminContactEnquiries from '../components/admin/AdminContactEnquiries';
 import { getAdminProfile } from '../services/authService';
 
 const PAGE_TITLE = {
@@ -20,6 +21,7 @@ const PAGE_TITLE = {
   gallery:    { title: 'Gallery Management',            sub: 'Manage gallery categories and photos' },
   homepage:   { title: 'Homepage Media',                sub: 'Manage hero slider, city delivery, advertise images and spotlight videos' },
   reviews:    { title: 'Reviews Management',          sub: 'Moderate reviews and manage homepage featured section' },
+  enquiries:  { title: 'Contact Enquiries',             sub: 'Manage and respond to customer contact enquiries' },
   profile:    { title: 'My Profile',                   sub: 'Manage your admin account' },
 };
 
@@ -70,6 +72,7 @@ export default function AdminDashboard({ onSignOut }) {
           {tab === 'gallery'    && <AdminGallery />}
           {tab === 'homepage'   && <AdminHomepageMedia />}
           {tab === 'reviews'    && <AdminReviews />}
+          {tab === 'enquiries'  && <AdminContactEnquiries />}
           {tab === 'profile'    && <AdminProfile onSignOut={onSignOut} />}
         </main>
       </div>
