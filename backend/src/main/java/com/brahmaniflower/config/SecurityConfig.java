@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/featured").permitAll()
                         // Public: product delivery serviceability check (product detail page)
                         .requestMatchers(HttpMethod.POST, "/api/delivery/serviceability/check").permitAll()
+                        // Public: direct pincode check (product detail page quick check)
+                        .requestMatchers(HttpMethod.POST, "/api/delivery/pincode/check").permitAll()
                         // Contact enquiry submission — public (guests + authenticated customers)
                         .requestMatchers(HttpMethod.POST, "/api/contact-enquiries").permitAll()
                         // Shiprocket webhook — public but validated via secret header

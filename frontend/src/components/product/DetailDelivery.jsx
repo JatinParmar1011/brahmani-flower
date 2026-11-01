@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { checkProductServiceability } from '../../services/deliveryService';
+import { checkPincodeServiceability } from '../../services/deliveryService';
 
 /**
  * Delivery section on the product detail page.
@@ -9,10 +9,11 @@ import { checkProductServiceability } from '../../services/deliveryService';
 export default function DetailDelivery({ product }) {
   const { delivery } = product;
   const [pincode,  setPincode]  = useState('');
-  const [status,   setStatus]   = useState(null); // null | 'checking' | 'available' | 'unavailable' | 'invalid' | 'error'
+  const [status,   setStatus]   = useState(null);
   const [message,  setMessage]  = useState('');
   const [etd,      setEtd]      = useState('');
   const [charge,   setCharge]   = useState(null);
+  const [location, setLocation] = useState(''); // city+state resolved by Shiprocket
 
   const deliveryRows = [
     { label: 'Standard Delivery', value: `Earliest: ${delivery || 'Tomorrow'}`, color: 'text-green-600' },
@@ -30,14 +31,21 @@ export default function DetailDelivery({ product }) {
     setMessage('');
     setEtd('');
     setCharge(null);
+    setLocation('');
 
     try {
-      const result = await checkProductServiceability(product.id, trimmed, '');
+      const result = await checkPincodeServiceability(trimmed);
       if (result.serviceable) {
         setStatus('available');
         setMessage(result.message || 'Delivery available to this pincode!');
         setEtd(result.estimatedDeliveryDate || '');
         setCharge(result.deliveryCharge);
+        // Show city+state resolved from pincode by Shiprocket
+        if (result.city && result.state) {
+          setLocation(`${result.city}, ${result.state}`);
+        } else if (result.city) {
+          setLocation(result.city);
+        }
       } else {
         setStatus('unavailable');
         // Map backend status codes to user-friendly messages
@@ -71,6 +79,7 @@ export default function DetailDelivery({ product }) {
       return (
         <div className="mt-2 flex flex-col gap-1">
           <p className="text-xs text-green-600 font-semibold">✓ {message}</p>
+          {location && <p className="text-xs text-gray-500">📍 {location}</p>}
           {etd && <p className="text-xs text-gray-500">📅 Estimated delivery: <span className="font-medium">{etd}</span></p>}
           {charge !== null && Number(charge) > 0 && (
             <p className="text-xs text-gray-500">🚚 Delivery charge: <span className="font-medium">₹{charge}</span></p>
@@ -122,6 +131,7 @@ export default function DetailDelivery({ product }) {
               setPincode(e.target.value.replace(/\D/g, '').slice(0, 6));
               setStatus(null);
               setMessage('');
+              setLocation('');
             }}
             onKeyDown={handleKeyDown}
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1a6b8a]"

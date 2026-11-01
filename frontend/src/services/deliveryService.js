@@ -38,6 +38,20 @@ export const checkProductServiceability = (productId, pincode, city = '') =>
     body: JSON.stringify({ productId, pincode, city: city || undefined }),
   });
 
+/**
+ * Direct pincode serviceability check — no productId needed.
+ * Uses Shiprocket GET /courier/serviceability/ directly.
+ * Fastest check for the product detail page delivery widget.
+ *
+ * @param {string} pincode - 6-digit Indian pincode
+ * @returns {Promise<ServiceabilityResult>}
+ */
+export const checkPincodeServiceability = (pincode) =>
+  apiFetch('/delivery/pincode/check', {
+    method: 'POST',
+    body: JSON.stringify({ pincode }),
+  });
+
 // ── Cart Serviceability ────────────────────────────────────────────────────
 
 /**
